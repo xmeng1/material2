@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {Component} from '@angular/core';
 
 
@@ -8,8 +16,9 @@ import {Component} from '@angular/core';
   styleUrls: ['radio-demo.css'],
 })
 export class RadioDemo {
-  isDisabled: boolean = false;
   isAlignEnd: boolean = false;
+  isDisabled: boolean = false;
+  isRequired: boolean = false;
   favoriteSeason: string = 'Autumn';
   seasonOptions = [
     'Winter',

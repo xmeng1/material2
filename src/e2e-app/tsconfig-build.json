@@ -5,9 +5,10 @@
     "declaration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    // TODO(paul): Remove once Angular has been upgraded and supports noUnusedParameters in AOT.
-    "noUnusedParameters": false,
-    "strictNullChecks": true,
+    "noUnusedParameters": true,
+    // Don't use strict nulls for the e2e-app because the material-examples are not
+    // strict-null compliant.
+    "strictNullChecks": false,
     "lib": ["es6", "es2015", "dom"],
     "module": "commonjs",
     "moduleResolution": "node",
@@ -20,10 +21,13 @@
     "typeRoots": [
       "../../node_modules/@types/!(node)"
     ],
-    "baseUrl": "",
+    "baseUrl": ".",
     "paths": {
+      "@angular/cdk/*": ["./cdk/*"],
       "@angular/material": ["./material"],
-      "@angular/cdk": ["./cdk"]
+      "@angular/material/*": ["./material/*"],
+      "@angular/material-moment-adapter": ["./material-moment-adapter"],
+      "@angular/material-examples": ["./material-examples"]
     }
   },
   "files": [

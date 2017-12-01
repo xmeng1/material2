@@ -1,8 +1,10 @@
-<div class="mat-sidenav-backdrop" (click)="_onBackdropClicked()"
-     [class.mat-sidenav-shown]="_isShowingBackdrop()"></div>
+<div class="mat-drawer-backdrop" (click)="_onBackdropClicked()"
+     [class.mat-drawer-shown]="_isShowingBackdrop()"></div>
 
-<ng-content select="md-sidenav, mat-sidenav"></ng-content>
+<ng-content select="mat-sidenav"></ng-content>
 
-<div class="mat-sidenav-content" [ngStyle]="_getStyles()" cdk-scrollable>
+<ng-content select="mat-sidenav-content">
+</ng-content>
+<mat-sidenav-content *ngIf="!_content" cdkScrollable>
   <ng-content></ng-content>
-</div>
+</mat-sidenav-content>

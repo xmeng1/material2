@@ -2,7 +2,7 @@ import {async, TestBed} from '@angular/core/testing';
 import {Component} from '@angular/core';
 import {By} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {MdExpansionModule} from './index';
+import {MatExpansionModule} from './index';
 
 
 describe('CdkAccordion', () => {
@@ -10,7 +10,7 @@ describe('CdkAccordion', () => {
     TestBed.configureTestingModule({
       imports: [
         BrowserAnimationsModule,
-        MdExpansionModule
+        MatExpansionModule
       ],
       declarations: [
         SetOfItems
@@ -20,8 +20,8 @@ describe('CdkAccordion', () => {
   }));
 
   it('should ensure only one item is expanded at a time', () => {
-    let fixture = TestBed.createComponent(SetOfItems);
-    let items = fixture.debugElement.queryAll(By.css('.mat-expansion-panel'));
+    const fixture = TestBed.createComponent(SetOfItems);
+    const items = fixture.debugElement.queryAll(By.css('.mat-expansion-panel'));
 
     fixture.componentInstance.firstPanelExpanded = true;
     fixture.detectChanges();
@@ -35,8 +35,8 @@ describe('CdkAccordion', () => {
   });
 
   it('should allow multiple items to be expanded simultaneously', () => {
-    let fixture = TestBed.createComponent(SetOfItems);
-    let panels = fixture.debugElement.queryAll(By.css('.mat-expansion-panel'));
+    const fixture = TestBed.createComponent(SetOfItems);
+    const panels = fixture.debugElement.queryAll(By.css('.mat-expansion-panel'));
 
     fixture.componentInstance.multi = true;
     fixture.componentInstance.firstPanelExpanded = true;
@@ -49,16 +49,16 @@ describe('CdkAccordion', () => {
 
 
 @Component({template: `
-  <md-accordion [multi]="multi">
-    <md-expansion-panel [expanded]="firstPanelExpanded">
-      <md-expansion-panel-header>Summary</md-expansion-panel-header>
+  <mat-accordion [multi]="multi">
+    <mat-expansion-panel [expanded]="firstPanelExpanded">
+      <mat-expansion-panel-header>Summary</mat-expansion-panel-header>
       <p>Content</p>
-    </md-expansion-panel>
-    <md-expansion-panel [expanded]="secondPanelExpanded">
-      <md-expansion-panel-header>Summary</md-expansion-panel-header>
+    </mat-expansion-panel>
+    <mat-expansion-panel [expanded]="secondPanelExpanded">
+      <mat-expansion-panel-header>Summary</mat-expansion-panel-header>
       <p>Content</p>
-    </md-expansion-panel>
-  </md-accordion>`})
+    </mat-expansion-panel>
+  </mat-accordion>`})
 class SetOfItems {
   multi: boolean = false;
   firstPanelExpanded: boolean = false;

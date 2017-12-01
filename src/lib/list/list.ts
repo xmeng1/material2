@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -8,166 +8,165 @@
 
 import {
   AfterContentInit,
+  ChangeDetectionStrategy,
   Component,
   ContentChild,
   ContentChildren,
   Directive,
   ElementRef,
-  Input,
   Optional,
   QueryList,
-  Renderer2,
-  ViewEncapsulation
+  ViewEncapsulation,
 } from '@angular/core';
-import {coerceBooleanProperty, MdLine, MdLineSetter} from '../core';
+import {CanDisableRipple, MatLine, MatLineSetter, mixinDisableRipple} from '@angular/material/core';
 
+// Boilerplate for applying mixins to MatList.
+/** @docs-private */
+export class MatListBase {}
+export const _MatListMixinBase = mixinDisableRipple(MatListBase);
+
+// Boilerplate for applying mixins to MatListItem.
+/** @docs-private */
+export class MatListItemBase {}
+export const _MatListItemMixinBase = mixinDisableRipple(MatListItemBase);
+
+
+/** Divider between items within a list. */
 @Directive({
-  selector: 'md-divider, mat-divider',
+  selector: 'mat-divider',
   host: {
     'role': 'separator',
     'aria-orientation': 'horizontal'
   }
 })
-export class MdListDivider {}
+export class MatListDivider {}
+
+/** A Material Design list component. */
+@Component({
+  moduleId: module.id,
+  selector: 'mat-nav-list',
+  exportAs: 'matNavList',
+  host: {
+    'role': 'navigation',
+    'class': 'mat-nav-list'
+  },
+  templateUrl: 'list.html',
+  styleUrls: ['list.css'],
+  inputs: ['disableRipple'],
+  encapsulation: ViewEncapsulation.None,
+  preserveWhitespaces: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class MatNavList extends _MatListMixinBase implements CanDisableRipple {}
 
 @Component({
   moduleId: module.id,
-  selector: 'md-list, mat-list, md-nav-list, mat-nav-list',
-  host: {'role': 'list'},
-  template: '<ng-content></ng-content>',
+  selector: 'mat-list',
+  exportAs: 'matList',
+  templateUrl: 'list.html',
+  host: {'class': 'mat-list'},
   styleUrls: ['list.css'],
-  encapsulation: ViewEncapsulation.None
+  inputs: ['disableRipple'],
+  encapsulation: ViewEncapsulation.None,
+  preserveWhitespaces: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MdList {
-  private _disableRipple: boolean = false;
-
-  /**
-   * Whether the ripple effect should be disabled on the list-items or not.
-   * This flag only has an effect for `md-nav-list` components.
-   */
-  @Input()
-  get disableRipple() { return this._disableRipple; }
-  set disableRipple(value: boolean) { this._disableRipple = coerceBooleanProperty(value); }
-}
+export class MatList extends _MatListMixinBase implements CanDisableRipple {}
 
 /**
  * Directive whose purpose is to add the mat- CSS styling to this selector.
  * @docs-private
  */
 @Directive({
-  selector: 'md-list, mat-list',
-  host: {'class': 'mat-list'}
-})
-export class MdListCssMatStyler {}
-
-/**
- * Directive whose purpose is to add the mat- CSS styling to this selector.
- * @docs-private
- */
-@Directive({
-  selector: 'md-nav-list, mat-nav-list',
-  host: {'class': 'mat-nav-list'}
-})
-export class MdNavListCssMatStyler {}
-
-/**
- * Directive whose purpose is to add the mat- CSS styling to this selector.
- * @docs-private
- */
-@Directive({
-  selector: 'md-divider, mat-divider',
+  selector: 'mat-divider',
   host: {'class': 'mat-divider'}
 })
-export class MdDividerCssMatStyler {}
+export class MatDividerCssMatStyler {}
 
 /**
  * Directive whose purpose is to add the mat- CSS styling to this selector.
  * @docs-private
  */
 @Directive({
-  selector: '[md-list-avatar], [mat-list-avatar], [mdListAvatar], [matListAvatar]',
+  selector: '[mat-list-avatar], [matListAvatar]',
   host: {'class': 'mat-list-avatar'}
 })
-export class MdListAvatarCssMatStyler {}
+export class MatListAvatarCssMatStyler {}
 
 /**
  * Directive whose purpose is to add the mat- CSS styling to this selector.
  * @docs-private
  */
 @Directive({
-  selector: '[md-list-icon], [mat-list-icon], [mdListIcon], [matListIcon]',
+  selector: '[mat-list-icon], [matListIcon]',
   host: {'class': 'mat-list-icon'}
 })
-export class MdListIconCssMatStyler {}
+export class MatListIconCssMatStyler {}
 
 /**
  * Directive whose purpose is to add the mat- CSS styling to this selector.
  * @docs-private
  */
 @Directive({
-  selector: '[md-subheader], [mat-subheader]',
+  selector: '[mat-subheader], [matSubheader]',
   host: {'class': 'mat-subheader'}
 })
-export class MdListSubheaderCssMatStyler {}
+export class MatListSubheaderCssMatStyler {}
 
+/** An item within a Material Design list. */
 @Component({
   moduleId: module.id,
-  selector: 'md-list-item, mat-list-item, a[md-list-item], a[mat-list-item]',
+  selector: 'mat-list-item, a[mat-list-item]',
+  exportAs: 'matListItem',
   host: {
     'role': 'listitem',
     'class': 'mat-list-item',
     '(focus)': '_handleFocus()',
     '(blur)': '_handleBlur()',
   },
+  inputs: ['disableRipple'],
   templateUrl: 'list-item.html',
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  preserveWhitespaces: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MdListItem implements AfterContentInit {
-  private _lineSetter: MdLineSetter;
-  private _disableRipple: boolean = false;
+export class MatListItem extends _MatListItemMixinBase implements AfterContentInit,
+    CanDisableRipple {
+  private _lineSetter: MatLineSetter;
   private _isNavList: boolean = false;
 
-  /**
-   * Whether the ripple effect on click should be disabled. This applies only to list items that are
-   * part of a nav list. The value of `disableRipple` on the `md-nav-list` overrides this flag.
-   */
-  @Input()
-  get disableRipple() { return this._disableRipple; }
-  set disableRipple(value: boolean) { this._disableRipple = coerceBooleanProperty(value); }
+  @ContentChildren(MatLine) _lines: QueryList<MatLine>;
 
-  @ContentChildren(MdLine) _lines: QueryList<MdLine>;
-
-  @ContentChild(MdListAvatarCssMatStyler)
-  set _hasAvatar(avatar: MdListAvatarCssMatStyler) {
+  @ContentChild(MatListAvatarCssMatStyler)
+  set _hasAvatar(avatar: MatListAvatarCssMatStyler) {
     if (avatar != null) {
-      this._renderer.addClass(this._element.nativeElement, 'mat-list-item-avatar');
+      this._element.nativeElement.classList.add('mat-list-item-avatar');
     } else {
-      this._renderer.removeClass(this._element.nativeElement, 'mat-list-item-avatar');
+      this._element.nativeElement.classList.remove('mat-list-item-avatar');
     }
   }
 
-  constructor(private _renderer: Renderer2,
-              private _element: ElementRef,
-              @Optional() private _list: MdList,
-              @Optional() navList: MdNavListCssMatStyler) {
-    this._isNavList = !!navList;
+  constructor(private _element: ElementRef,
+              @Optional() private _navList: MatNavList) {
+    super();
+    this._isNavList = !!_navList;
   }
 
   ngAfterContentInit() {
-    this._lineSetter = new MdLineSetter(this._lines, this._renderer, this._element);
+    this._lineSetter = new MatLineSetter(this._lines, this._element);
   }
 
   /** Whether this list item should show a ripple effect when clicked.  */
-  isRippleEnabled() {
-    return !this.disableRipple && this._isNavList && !this._list.disableRipple;
+  _isRippleDisabled() {
+    return !this._isNavList || this.disableRipple || this._navList.disableRipple;
   }
 
   _handleFocus() {
-    this._renderer.addClass(this._element.nativeElement, 'mat-list-item-focus');
+    this._element.nativeElement.classList.add('mat-list-item-focus');
   }
 
   _handleBlur() {
-    this._renderer.removeClass(this._element.nativeElement, 'mat-list-item-focus');
+    this._element.nativeElement.classList.remove('mat-list-item-focus');
   }
 
   /** Retrieves the DOM element of the component host. */

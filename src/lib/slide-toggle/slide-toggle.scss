@@ -2,7 +2,7 @@
 @import '../core/ripple/ripple';
 @import '../core/style/elevation';
 @import '../core/style/vendor-prefixes';
-@import '../core/a11y/a11y';
+@import '../../cdk/a11y/a11y';
 
 $mat-slide-toggle-thumb-size: 20px !default;
 $mat-slide-toggle-bar-border-radius: 8px !default;
@@ -48,6 +48,7 @@ $mat-slide-toggle-bar-track-width: $mat-slide-toggle-bar-width - $mat-slide-togg
   flex: 1;
   flex-direction: row;
   align-items: center;
+  height: inherit;
 
   cursor: pointer;
 }
@@ -72,6 +73,11 @@ $mat-slide-toggle-bar-track-width: $mat-slide-toggle-bar-width - $mat-slide-togg
     margin-left: $mat-slide-toggle-spacing;
     margin-right: 0;
   }
+}
+
+.mat-slide-toggle-bar-no-side-margin {
+  margin-left: 0;
+  margin-right: 0;
 }
 
 // The thumb container is responsible for the dragging functionality.
@@ -155,7 +161,6 @@ $mat-slide-toggle-bar-track-width: $mat-slide-toggle-bar-width - $mat-slide-togg
   left: $mat-slide-toggle-thumb-size / 2 - $mat-slide-toggle-ripple-radius;
   height: $mat-slide-toggle-ripple-radius * 2;
   width: $mat-slide-toggle-ripple-radius * 2;
-  border-radius: 50%;
   z-index: 1;
   pointer-events: none;
 }

@@ -1,12 +1,12 @@
-The Angular Material tooltip provides a text label that is displayed with the user hovers 
-over or longpresses an element. 
+The Angular Material tooltip provides a text label that is displayed when the user hovers
+over or longpresses an element.
 
 <!-- example(tooltip-overview) -->
 
 ### Positioning
 
-The tooltip will be displayed below the element but this can be configured using the `mdTooltipPosition`
-input. 
+The tooltip will be displayed below the element but this can be configured using the `matTooltipPosition`
+input.
 The tooltip can be displayed above, below, left, or right of the element. By default the position
 will be below. If the tooltip should switch left/right positions in an RTL layout direction, then
 the positions `before` and `after` should be used instead of `left` and `right`, respectively.
@@ -23,15 +23,21 @@ the positions `before` and `after` should be used instead of `left` and `right`,
 
 ### Showing and hiding
 
-The tooltip is immediately shown when the user's mouse hovers over the element and immediately 
+The tooltip is immediately shown when the user's mouse hovers over the element and immediately
 hides when the user's mouse leaves. A delay in showing or hiding the tooltip can be added through
-the inputs `mdTooltipShowDelay` and `mdTooltipHideDelay`.
+the inputs `matTooltipShowDelay` and `matTooltipHideDelay`.
 
-On mobile, the tooltip is displayed when the user longpresses the element and hides after a 
+On mobile, the tooltip is displayed when the user longpresses the element and hides after a
 delay of 1500ms. The longpress behavior requires HammerJS to be loaded on the page.
 
 The tooltip can also be shown and hidden through the `show` and `hide` directive methods,
 which both accept a number in milliseconds to delay before applying the display change.
 
-To turn off the tooltip and prevent it from showing to the user, use the `mdTooltipDisabled` input flag.
+To turn off the tooltip and prevent it from showing to the user, use the `matTooltipDisabled` input flag.
 
+### Accessibility
+
+Elements with the `matTooltip` will add an `aria-describedby` label that provides a reference
+to a visually hidden element containing the tooltip's message. This provides screenreaders the
+information needed to read out the tooltip's contents when the end-user focuses on the element
+triggering the tooltip.

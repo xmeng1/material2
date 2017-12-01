@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {MdSnackBar} from '@angular/material';
+import {MatSnackBar} from '@angular/material';
 import {FirebaseService} from '../firebase.service';
 
 /**
@@ -38,15 +38,15 @@ export class ViewerComponent {
   }
 
   constructor(private _service: FirebaseService,
-              private _route: ActivatedRoute,
-              public snackBar: MdSnackBar) {
-    _route.params.subscribe(p => {
+              public snackBar: MatSnackBar,
+              activatedRoute: ActivatedRoute) {
+    activatedRoute.params.subscribe(p => {
       this._service.prNumber = p['id'];
     });
   }
 
   approve() {
-    this._service.approvePullRequest().then((result) => {
+    this._service.approvePullRequest().then(() => {
       this.snackBar.open(`Approved`, '', this.messageDuration);
     }).catch((error) => {
       this.snackBar.open(`Error ${error}`, '', this.messageDuration);
@@ -54,7 +54,7 @@ export class ViewerComponent {
   }
 
   updateGithubStatus() {
-    this._service.updatePullRequestResult().then((result) => {
+    this._service.updatePullRequestResult().then(() => {
       this.snackBar.open(`Approved`, '', this.messageDuration);
     }).catch((error) => {
       this.snackBar.open(error.message, '', this.messageDuration);

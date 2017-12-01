@@ -20,4 +20,12 @@
   .mat-basic-chip {
     margin: auto 10px;
   }
+
+  mat-chip-list input {
+    width: 150px;
+  }
+}
+
+.has-chip-list {
+  width: 100%;
 }

@@ -7,7 +7,7 @@ import {EXAMPLE_COMPONENTS} from './example-module';
  */
 export class ExampleData {
   // TODO: figure out how do we get these variables.
-  description: string = 'Some description for material';
+  description = 'Some description for material';
   // TODO: use real example and delete the example/ folder.
   examplePath = '/assets/example/';
   exampleFiles = ['button-demo.html', 'button-demo.scss', 'button-demo.ts'];
@@ -19,7 +19,7 @@ export class ExampleData {
 
   constructor(example: string) {
     if (example && EXAMPLE_COMPONENTS[example]) {
-      this.examplePath = `/assets/plunker/examples/${example}/`;
+      this.examplePath = `/assets/stackblitz/examples/${example}/`;
       // TODO(tinayuangao): Do not hard-code extensions
       this.exampleFiles = ['html', 'ts', 'css']
         .map((extension) => `${example}-example.${extension}`);

@@ -11,38 +11,59 @@ import {SimpleRadioButtons} from './radio/radio-e2e';
 import {BasicTabs} from './tabs/tabs-e2e';
 import {DialogE2E, TestDialog} from './dialog/dialog-e2e';
 import {GridListE2E} from './grid-list/grid-list-e2e';
-import {ListE2E} from './list/list-e2e';
 import {ProgressBarE2E} from './progress-bar/progress-bar-e2e';
 import {ProgressSpinnerE2E} from './progress-spinner/progress-spinner-e2e';
-import {FullscreenE2E, TestDialog as TestDialogFullScreen} from './fullscreen/fullscreen-e2e';
+import {FullscreenE2E, TestDialogFullScreen} from './fullscreen/fullscreen-e2e';
 import {E2E_APP_ROUTES} from './e2e-app/routes';
 import {SlideToggleE2E} from './slide-toggle/slide-toggle-e2e';
 import {InputE2E} from './input/input-e2e';
+import {SidenavE2E} from './sidenav/sidenav-e2e';
 import {BlockScrollStrategyE2E} from './block-scroll-strategy/block-scroll-strategy-e2e';
 import {
-  OverlayContainer, FullscreenOverlayContainer, MdGridListModule, MdProgressBarModule,
-  MdProgressSpinnerModule, MdTabsModule, MdRadioModule, MdSlideToggleModule, MdMenuModule,
-  MdListModule, MdInputModule, MdIconModule, MdDialogModule, MdCheckboxModule, MdButtonModule
+  MatButtonModule,
+  MatCheckboxModule,
+  MatDialogModule,
+  MatFormFieldModule,
+  MatGridListModule,
+  MatIconModule,
+  MatInputModule,
+  MatListModule,
+  MatMenuModule,
+  MatNativeDateModule,
+  MatProgressBarModule,
+  MatProgressSpinnerModule,
+  MatRadioModule,
+  MatSidenavModule,
+  MatSlideToggleModule,
+  MatStepperModule,
+  MatTabsModule,
 } from '@angular/material';
+import {FullscreenOverlayContainer, OverlayContainer} from '@angular/cdk/overlay';
+import {ExampleModule} from '@angular/material-examples';
+import {ReactiveFormsModule} from '@angular/forms';
 
 /**
  * NgModule that contains all Material modules that are required to serve the e2e-app.
  */
 @NgModule({
   exports: [
-    MdButtonModule,
-    MdCheckboxModule,
-    MdDialogModule,
-    MdGridListModule,
-    MdIconModule,
-    MdInputModule,
-    MdListModule,
-    MdMenuModule,
-    MdSlideToggleModule,
-    MdRadioModule,
-    MdProgressBarModule,
-    MdProgressSpinnerModule,
-    MdTabsModule
+    MatButtonModule,
+    MatCheckboxModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatGridListModule,
+    MatIconModule,
+    MatInputModule,
+    MatListModule,
+    MatMenuModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+    MatRadioModule,
+    MatSidenavModule,
+    MatSlideToggleModule,
+    MatStepperModule,
+    MatTabsModule,
+    MatNativeDateModule,
   ]
 })
 export class E2eMaterialModule {}
@@ -53,6 +74,8 @@ export class E2eMaterialModule {}
     RouterModule.forRoot(E2E_APP_ROUTES),
     E2eMaterialModule,
     NoopAnimationsModule,
+    ExampleModule,
+    ReactiveFormsModule
   ],
   declarations: [
     BasicTabs,
@@ -64,10 +87,10 @@ export class E2eMaterialModule {}
     Home,
     IconE2E,
     InputE2E,
-    ListE2E,
     MenuE2E,
     ProgressBarE2E,
     ProgressSpinnerE2E,
+    SidenavE2E,
     SimpleCheckboxes,
     SimpleRadioButtons,
     SlideToggleE2E,

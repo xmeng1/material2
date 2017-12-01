@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {Component} from '@angular/core';
 
 
@@ -8,9 +16,9 @@ import {Component} from '@angular/core';
   styleUrls: ['progress-spinner-demo.css'],
 })
 export class ProgressSpinnerDemo {
-  progressValue: number = 60;
-  color: string = 'primary';
-  modeToggle: boolean = false;
+  progressValue = 60;
+  color = 'primary';
+  isDeterminate = true;
 
   step(val: number) {
     this.progressValue = Math.max(0, Math.min(100, val + this.progressValue));

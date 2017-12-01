@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {Component} from '@angular/core';
 
 @Component({
@@ -7,7 +15,6 @@ import {Component} from '@angular/core';
   styleUrls: ['gestures-demo.css'],
 })
 export class GesturesDemo {
-  dragCount: number = 0;
   panCount: number = 0;
   pressCount: number = 0;
   longpressCount: number = 0;

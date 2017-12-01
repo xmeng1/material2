@@ -8,9 +8,23 @@
     "module": "commonjs",
     "target": "es5",
     "types": ["jasmine"],
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "paths": {
+      "@angular/cdk/*": ["./*"]
+    }
+  },
+  "files": [
+    "./testing/index.ts",
+    "typings.d.ts"
+  ],
+  "angularCompilerOptions": {
+    "strictMetadataEmit": true,
+    "skipTemplateCodegen": true,
+    "emitDecoratorMetadata": true
   },
   "include": [
+    // Include the index.ts for each secondary entry-point
+    "./*/index.ts",
     "**/*.spec.ts"
   ]
 }

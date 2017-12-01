@@ -16,6 +16,7 @@ at the top of the page (e.g. a hero header).
 * `body-2` - Bolder body text.
 * `caption` - Smaller body and hint text.
 * `button` - Buttons and anchors.
+* `input` - Form input fields.
 
 The typography levels are collected into a typography config which is used to generate the CSS.
 
@@ -58,7 +59,7 @@ creating a custom theme, you can create a custom **typography configuration**.
 // Define a custom typography config that overrides the font-family as well as the
 // `headlines` and `body-1` levels.
 $custom-typography: mat-typography-config(
-  $font-family: monospace,
+  $font-family: 'Roboto, monospace',
   $headline: mat-typography-level(32px, 48px, 700),
   $body-1: mat-typography-level(16px, 24px, 500)
 );
@@ -67,7 +68,8 @@ $custom-typography: mat-typography-config(
 As the above example demonstrates, a typography configuration is created by using the
 `mat-typography-config` function, which is given both the font-family and the set of typographic
 levels described earlier. Each typographic level is defined by the `mat-typography-level` function,
-which requires a `font-size`, `line-height`, and `font-weight`.
+which requires a `font-size`, `line-height`, and `font-weight`. **Note** that the `font-family`
+has to be in quotes.
 
 
 Once the custom typography definition is created, it can be consumed to generate styles via
@@ -82,6 +84,14 @@ different SASS mixins.
 
 // Override typography for all Angular Material, including mat-base-typography and all components.
 @include angular-material-typography($custom-typography);
+```
+
+If you're using Material's theming, you can also pass in your typography config to the
+`mat-core` mixin:
+
+```scss
+// Override the typography in the core CSS.
+@include mat-core($custom-typography);
 ```
 
 For more details about the typography functions and default config, see the

@@ -1,30 +1,31 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
 import {Directive, ElementRef} from '@angular/core';
-import {CanDisable, mixinDisabled} from '../core/common-behaviors/disabled';
+import {CanDisable, mixinDisabled} from '@angular/material/core';
 
-// Boilerplate for applying mixins to MdTabLabelWrapper.
-export class MdTabLabelWrapperBase {}
-export const _MdTabLabelWrapperMixinBase = mixinDisabled(MdTabLabelWrapperBase);
+// Boilerplate for applying mixins to MatTabLabelWrapper.
+/** @docs-private */
+export class MatTabLabelWrapperBase {}
+export const _MatTabLabelWrapperMixinBase = mixinDisabled(MatTabLabelWrapperBase);
 
 /**
- * Used in the `md-tab-group` view to display tab labels.
+ * Used in the `mat-tab-group` view to display tab labels.
  * @docs-private
  */
 @Directive({
-  selector: '[md-tab-label-wrapper], [mat-tab-label-wrapper]',
+  selector: '[matTabLabelWrapper]',
   inputs: ['disabled'],
   host: {
     '[class.mat-tab-disabled]': 'disabled'
   }
 })
-export class MdTabLabelWrapper extends _MdTabLabelWrapperMixinBase implements CanDisable {
+export class MatTabLabelWrapper extends _MatTabLabelWrapperMixinBase implements CanDisable {
   constructor(public elementRef: ElementRef) {
     super();
   }

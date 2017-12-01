@@ -1,11 +1,14 @@
 import {Component, ViewEncapsulation} from '@angular/core';
 
-
+/**
+ * @title Configurable slider
+ */
 @Component({
   selector: 'slider-configurable-example',
   templateUrl: 'slider-configurable-example.html',
   styleUrls: ['slider-configurable-example.css'],
   encapsulation: ViewEncapsulation.None,
+  preserveWhitespaces: false,
 })
 export class SliderConfigurableExample {
   autoTicks = false;

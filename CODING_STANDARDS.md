@@ -43,20 +43,22 @@ use `//` style comments for everything else (explanations, background info, etc.
 
 In SCSS code, always use `//` style comments.
 
+In HTML code, use `<!-- ... -->` comments, which will be stripped when packaging a build.
+
 #### Prefer more focused, granular components vs. complex, configurable components.
 
 For example, rather than doing this:
 ```html
-<md-button>Basic button</md-button>
-<md-button class="mat-fab">FAB</md-button>
-<md-button class="mat-icon-button">pony</md-button>
+<mat-button>Basic button</mat-button>
+<mat-button class="mat-fab">FAB</mat-button>
+<mat-button class="mat-icon-button">pony</mat-button>
 ```
 
 do this:
 ```html
-<md-button>Basic button</md-button>
-<md-fab>FAB</md-fab>
-<md-icon-button>pony</md-icon-button>
+<mat-button>Basic button</mat-button>
+<mat-fab>FAB</mat-fab>
+<mat-icon-button>pony</mat-icon-button>
 ```
 
 #### Prefer small, focused modules
@@ -124,6 +126,21 @@ class ConfigBuilder {
 }
 ```
 
+#### RxJS
+When dealing with RxJS operators, import the lettable operator (e.g.
+`import {map} from 'rxjs/operators/map'`), as opposed to using the "patch" imports which pollute the
+user's global Observable object (e.g. `import 'rxjs/add/operator/map'`):
+
+```ts
+// NO
+import 'rxjs/add/operator/map';
+someObservable.map(...).subscribe(...);
+
+// YES
+import {map} from 'rxjs/operators/map';
+someObservable.pipe(map(...)).subscribe(...);
+```
+
 #### Access modifiers
 * Omit the `public` keyword as it is the default behavior.
 * Use `private` when appropriate and possible, prefixing the name with an underscore.
@@ -136,6 +153,24 @@ be part of the user-facing API. This typically applies to symbols used in templa
 
 Additionally, the `@docs-private` JsDoc annotation can be used to hide any symbol from the public
 API docs.
+
+
+#### Getters and Setters
+* Avoid long or complex getters and setters. If the logic of an accessor would take more than
+three lines, introduce a new method to contain the logic.
+* A getter should immediately precede its corresponding setter.
+* Decorators such as `@Input` should be applied to the getter and not the setter.
+* Always use a `readonly` property instead of a getter (with no setter) when possible.
+  ```ts
+  /** YES */
+  readonly active: boolean;
+
+  /** NO */
+  get active(): boolean {
+    // Using a getter solely to make the property read-only.
+    return this._active;
+  }
+  ```
 
 #### JsDoc comments
 
@@ -161,7 +196,7 @@ and the return value:
    * @param config Dialog configuration options.
    * @returns Reference to the newly-opened dialog.
    */
-  open<T>(component: ComponentType<T>, config?: MdDialogConfig): MdDialogRef<T> { ... }
+  open<T>(component: ComponentType<T>, config?: MatDialogConfig): MatDialogRef<T> { ... }
 ```
 
 Boolean properties and return values should use "Whether..." as opposed to "True if...":
@@ -169,6 +204,13 @@ Boolean properties and return values should use "Whether..." as opposed to "True
   /** Whether the button is disabled. */
   disabled: boolean = false;
 ```
+
+#### Try-Catch
+
+Avoid `try-catch` blocks, instead preferring to prevent an error from being thrown in the first
+place. When impossible to avoid, the `try-catch` block must include a comment that explains the
+specific error being caught and why it cannot be prevented.
+
 
 #### Naming
 
@@ -192,8 +234,9 @@ class UniqueSelectionDispatcher { }
 Avoid suffixing a class with "Service", as it communicates nothing about what the class does. Try to
 think of the class name as a person's job title.
 
-Classes that correspond to a directive with an `md-` prefix should also be prefixed with `Md`.
-CDK classes should not have a prefix.
+Classes that correspond to a directive with an `mat-` prefix should also be prefixed with `Mat`.
+CDK classes should only have a `Cdk` prefix when the class is a directive with a `cdk` selector
+prefix.
 
 ##### Methods
 The name of a method should capture the action that is performed *by* that method rather than
@@ -214,7 +257,8 @@ activateRipple() {
 #### Inheritance
 
 Avoid using inheritance to apply reusable behaviors to multiple components. This limits how many
-behaviors can be composed.
+behaviors can be composed. Instead, [TypeScript mixins][ts-mixins] can be used to compose multiple
+common behaviors into a single component.
 
 ### Angular
 
@@ -279,7 +323,7 @@ This makes it easier to override styles when necessary. For example, rather than
 ```scss
 the-host-element {
   // ...
- 
+
   .some-child-element {
     color: red;
   }
@@ -318,3 +362,5 @@ When it is not super obvious, include a brief description of what a class repres
 // Portion of the floating panel that sits, invisibly, on top of the input.
 .mat-datepicker-input-mask { }
 ```
+
+[ts-mixins]: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html#support-for-mix-in-classes

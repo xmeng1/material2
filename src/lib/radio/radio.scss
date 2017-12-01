@@ -3,7 +3,7 @@
 
 
 $mat-radio-size: $mat-toggle-size !default;
-$mat-radio-ripple-size: $mat-radio-size * 0.75;
+$mat-radio-ripple-radius: 25px;
 
 // Top-level host container.
 .mat-radio-button {
@@ -24,9 +24,12 @@ $mat-radio-ripple-size: $mat-radio-size * 0.75;
 .mat-radio-container {
   box-sizing: border-box;
   display: inline-block;
-  height: $mat-radio-size;
   position: relative;
   width: $mat-radio-size;
+  height: $mat-radio-size;
+  // The radio container is inside of a inline-flex element and may shrink if the label
+  // is wide and text-wrapping is enabled.
+  flex-shrink: 0;
 }
 
 // The outer circle for the radio, always present.
@@ -54,8 +57,11 @@ $mat-radio-ripple-size: $mat-radio-size * 0.75;
   position: absolute;
   top: 0;
   transition: transform ease 280ms, background-color ease 280ms;
-  transform: scale(0);
   width: $mat-radio-size;
+
+  // Note: This starts from 0.001 instead of 0, because transitioning from 0 to 0.5 causes
+  // IE to flash the entire circle for a couple of frames, throwing off the entire animation.
+  transform: scale(0.001);
 
   .mat-radio-checked & {
     transform: scale(0.5);
@@ -95,11 +101,10 @@ $mat-radio-ripple-size: $mat-radio-size * 0.75;
 
 .mat-radio-ripple {
   position: absolute;
-  left: -$mat-radio-ripple-size;
-  top: -$mat-radio-ripple-size;
-  right: -$mat-radio-ripple-size;
-  bottom: -$mat-radio-ripple-size;
-  border-radius: 50%;
+  left: $mat-radio-size / 2 - $mat-radio-ripple-radius;
+  top: $mat-radio-size / 2 - $mat-radio-ripple-radius;
+  height: $mat-radio-ripple-radius * 2;
+  width: $mat-radio-ripple-radius * 2;
   z-index: 1;
   pointer-events: none;
 }

@@ -1,24 +1,33 @@
-import {NativeDateAdapter} from './native-date-adapter';
-import {Platform} from '../platform/index';
-
+import {Platform} from '@angular/cdk/platform';
+import {LOCALE_ID} from '@angular/core';
+import {async, inject, TestBed} from '@angular/core/testing';
+import {DEC, FEB, JAN, MAR} from '../testing/month-constants';
+import {DateAdapter, MAT_DATE_LOCALE, NativeDateAdapter, NativeDateModule} from './index';
 
 const SUPPORTS_INTL = typeof Intl != 'undefined';
 
 
-// When constructing a Date, the month is zero-based. This can be confusing, since people are
-// used to seeing them one-based. So we create these aliases to make reading the tests easier.
-const JAN = 0, FEB = 1, MAR = 2, APR = 3, MAY = 4, JUN = 5, JUL = 6, AUG = 7, SEP = 8, OCT = 9,
-      NOV = 10, DEC = 11;
-
-
 describe('NativeDateAdapter', () => {
-  let adapter;
-  let platform;
+  const platform = new Platform();
+  let adapter: NativeDateAdapter;
+  let assertValidDate: (d: Date | null, valid: boolean) => void;
 
-  beforeEach(() => {
-    adapter = new NativeDateAdapter();
-    platform = new Platform();
-  });
+  beforeEach(async(() => {
+    TestBed.configureTestingModule({
+      imports: [NativeDateModule]
+    }).compileComponents();
+  }));
+
+  beforeEach(inject([DateAdapter], (dateAdapter: NativeDateAdapter) => {
+    adapter = dateAdapter;
+
+    assertValidDate = (d: Date | null, valid: boolean) => {
+      expect(adapter.isDateInstance(d)).not.toBeNull(`Expected ${d} to be a date instance`);
+      expect(adapter.isValid(d!)).toBe(valid,
+          `Expected ${d} to be ${valid ? 'valid' : 'invalid'},` +
+          ` but was ${valid ? 'invalid' : 'valid'}`);
+    };
+  }));
 
   it('should get year', () => {
     expect(adapter.getYear(new Date(2017, JAN, 1))).toBe(2017);
@@ -196,15 +205,20 @@ describe('NativeDateAdapter', () => {
     expect(adapter.parse(date)).not.toBe(date);
   });
 
-  it('should parse invalid value as null', () => {
-    expect(adapter.parse('hello')).toBeNull();
+  it('should parse invalid value as invalid', () => {
+    let d = adapter.parse('hello');
+    expect(d).not.toBeNull();
+    expect(adapter.isDateInstance(d))
+        .toBe(true, 'Expected string to have been fed through Date.parse');
+    expect(adapter.isValid(d as Date))
+        .toBe(false, 'Expected to parse as "invalid date" object');
   });
 
   it('should format', () => {
     if (SUPPORTS_INTL) {
-      expect(adapter.format(new Date(2017, JAN, 1))).toEqual('1/1/2017');
+      expect(adapter.format(new Date(2017, JAN, 1), {})).toEqual('1/1/2017');
     } else {
-      expect(adapter.format(new Date(2017, JAN, 1))).toEqual('Sun Jan 01 2017');
+      expect(adapter.format(new Date(2017, JAN, 1), {})).toEqual('Sun Jan 01 2017');
     }
   });
 
@@ -229,13 +243,18 @@ describe('NativeDateAdapter', () => {
     if (SUPPORTS_INTL) {
       // Edge & IE use a different format in Japanese.
       if (platform.EDGE || platform.TRIDENT) {
-        expect(adapter.format(new Date(2017, JAN, 1))).toEqual('2017年1月1日');
+        expect(adapter.format(new Date(2017, JAN, 1), {})).toEqual('2017年1月1日');
       } else {
-        expect(adapter.format(new Date(2017, JAN, 1))).toEqual('2017/1/1');
+        expect(adapter.format(new Date(2017, JAN, 1), {})).toEqual('2017/1/1');
       }
     } else {
-      expect(adapter.format(new Date(2017, JAN, 1))).toEqual('Sun Jan 01 2017');
+      expect(adapter.format(new Date(2017, JAN, 1), {})).toEqual('Sun Jan 01 2017');
     }
+  });
+
+  it('should throw when attempting to format invalid date', () => {
+    expect(() => adapter.format(new Date(NaN), {}))
+        .toThrowError(/NativeDateAdapter: Cannot format invalid date\./);
   });
 
   it('should add years', () => {
@@ -295,5 +314,97 @@ describe('NativeDateAdapter', () => {
     expect(adapter.clampDate(
         new Date(2018, FEB, 1), new Date(2018, JAN, 1), new Date(2019, JAN, 1)))
         .toEqual(new Date(2018, FEB, 1));
+  });
+
+  it('should use UTC for formatting by default', () => {
+    if (SUPPORTS_INTL) {
+      expect(adapter.format(new Date(1800, 7, 14), {day: 'numeric'})).toBe('14');
+    } else {
+      expect(adapter.format(new Date(1800, 7, 14), {day: 'numeric'})).toBe('Thu Aug 14 1800');
+    }
+  });
+
+  it('should count today as a valid date instance', () => {
+    let d = new Date();
+    expect(adapter.isValid(d)).toBe(true);
+    expect(adapter.isDateInstance(d)).toBe(true);
+  });
+
+  it('should count an invalid date as an invalid date instance', () => {
+    let d = new Date(NaN);
+    expect(adapter.isValid(d)).toBe(false);
+    expect(adapter.isDateInstance(d)).toBe(true);
+  });
+
+  it('should count a string as not a date instance', () => {
+    let d = '1/1/2017';
+    expect(adapter.isDateInstance(d)).toBe(false);
+  });
+
+  it('should create dates from valid ISO strings', () => {
+    assertValidDate(adapter.deserialize('1985-04-12T23:20:50.52Z'), true);
+    assertValidDate(adapter.deserialize('1996-12-19T16:39:57-08:00'), true);
+    assertValidDate(adapter.deserialize('1937-01-01T12:00:27.87+00:20'), true);
+    assertValidDate(adapter.deserialize('2017-01-01'), true);
+    assertValidDate(adapter.deserialize('2017-01-01T00:00:00'), true);
+    assertValidDate(adapter.deserialize('1990-13-31T23:59:00Z'), false);
+    assertValidDate(adapter.deserialize('1/1/2017'), false);
+    assertValidDate(adapter.deserialize('2017-01-01T'), false);
+    expect(adapter.deserialize('')).toBeNull();
+    expect(adapter.deserialize(null)).toBeNull();
+    assertValidDate(adapter.deserialize(new Date()), true);
+    assertValidDate(adapter.deserialize(new Date(NaN)), false);
+  });
+
+  it('should create an invalid date', () => {
+    assertValidDate(adapter.invalid(), false);
+  });
+});
+
+
+describe('NativeDateAdapter with MAT_DATE_LOCALE override', () => {
+  let adapter: NativeDateAdapter;
+
+  beforeEach(async(() => {
+    TestBed.configureTestingModule({
+      imports: [NativeDateModule],
+      providers: [{provide: MAT_DATE_LOCALE, useValue: 'da-DK'}]
+    }).compileComponents();
+  }));
+
+  beforeEach(inject([DateAdapter], (d: NativeDateAdapter) => {
+    adapter = d;
+  }));
+
+  it('should take the default locale id from the MAT_DATE_LOCALE injection token', () => {
+    const expectedValue = SUPPORTS_INTL ?
+        ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'] :
+        ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    expect(adapter.getDayOfWeekNames('long')).toEqual(expectedValue);
+  });
+
+});
+
+describe('NativeDateAdapter with LOCALE_ID override', () => {
+  let adapter: NativeDateAdapter;
+
+  beforeEach(async(() => {
+    TestBed.configureTestingModule({
+      imports: [NativeDateModule],
+      providers: [{provide: LOCALE_ID, useValue: 'da-DK'}]
+    }).compileComponents();
+  }));
+
+  beforeEach(inject([DateAdapter], (d: NativeDateAdapter) => {
+    adapter = d;
+  }));
+
+  it('should cascade locale id from the LOCALE_ID injection token to MAT_DATE_LOCALE', () => {
+    const expectedValue = SUPPORTS_INTL ?
+        ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'] :
+        ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    expect(adapter.getDayOfWeekNames('long')).toEqual(expectedValue);
   });
 });

@@ -1,46 +1,43 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Injectable, ComponentRef, Optional, SkipSelf} from '@angular/core';
-import {
-  ComponentType,
-  ComponentPortal,
-  Overlay,
-  OverlayRef,
-  OverlayState,
-  LiveAnnouncer,
-} from '../core';
-import {MdSnackBarConfig} from './snack-bar-config';
-import {MdSnackBarRef} from './snack-bar-ref';
-import {MdSnackBarContainer} from './snack-bar-container';
+import {LiveAnnouncer} from '@angular/cdk/a11y';
+import {BreakpointObserver, Breakpoints} from '@angular/cdk/layout';
+import {Overlay, OverlayConfig, OverlayRef} from '@angular/cdk/overlay';
+import {ComponentPortal, ComponentType, PortalInjector} from '@angular/cdk/portal';
+import {ComponentRef, Injectable, Injector, Optional, SkipSelf} from '@angular/core';
+import {take} from 'rxjs/operators/take';
+import {takeUntil} from 'rxjs/operators/takeUntil';
 import {SimpleSnackBar} from './simple-snack-bar';
-import {extendObject} from '../core/util/object-extend';
+import {MAT_SNACK_BAR_DATA, MatSnackBarConfig} from './snack-bar-config';
+import {MatSnackBarContainer} from './snack-bar-container';
+import {MatSnackBarRef} from './snack-bar-ref';
 
 
 /**
  * Service to dispatch Material Design snack bar messages.
  */
 @Injectable()
-export class MdSnackBar {
+export class MatSnackBar {
   /**
    * Reference to the current snack bar in the view *at this level* (in the Angular injector tree).
    * If there is a parent snack-bar service, all operations should delegate to that parent
    * via `_openedSnackBarRef`.
    */
-  private _snackBarRefAtThisLevel: MdSnackBarRef<any> | null = null;
+  private _snackBarRefAtThisLevel: MatSnackBarRef<any> | null = null;
 
   /** Reference to the currently opened snackbar at *any* level. */
-  get _openedSnackBarRef(): MdSnackBarRef<any> | null {
-    let parent = this._parentSnackBar;
+  get _openedSnackBarRef(): MatSnackBarRef<any> | null {
+    const parent = this._parentSnackBar;
     return parent ? parent._openedSnackBarRef : this._snackBarRefAtThisLevel;
   }
 
-  set _openedSnackBarRef(value: MdSnackBarRef<any> | null) {
+  set _openedSnackBarRef(value: MatSnackBarRef<any> | null) {
     if (this._parentSnackBar) {
       this._parentSnackBar._openedSnackBarRef = value;
     } else {
@@ -51,7 +48,9 @@ export class MdSnackBar {
   constructor(
       private _overlay: Overlay,
       private _live: LiveAnnouncer,
-      @Optional() @SkipSelf() private _parentSnackBar: MdSnackBar) {}
+      private _injector: Injector,
+      private _breakpointObserver: BreakpointObserver,
+      @Optional() @SkipSelf() private _parentSnackBar: MatSnackBar) {}
 
   /**
    * Creates and dispatches a snack bar with a custom component for the content, removing any
@@ -60,11 +59,9 @@ export class MdSnackBar {
    * @param component Component to be instantiated.
    * @param config Extra configuration for the snack bar.
    */
-  openFromComponent<T>(component: ComponentType<T>, config?: MdSnackBarConfig): MdSnackBarRef<T> {
-    config = _applyConfigDefaults(config);
-    let overlayRef = this._createOverlay(config);
-    let snackBarContainer = this._attachSnackBarContainer(overlayRef, config);
-    let snackBarRef = this._attachSnackbarContent(component, snackBarContainer, overlayRef);
+  openFromComponent<T>(component: ComponentType<T>, config?: MatSnackBarConfig): MatSnackBarRef<T> {
+    const _config = _applyConfigDefaults(config);
+    const snackBarRef = this._attach(component, _config);
 
     // When the snackbar is dismissed, clear the reference to it.
     snackBarRef.afterDismissed().subscribe(() => {
@@ -74,27 +71,25 @@ export class MdSnackBar {
       }
     });
 
-    // If a snack bar is already in view, dismiss it and enter the new snack bar after exit
-    // animation is complete.
     if (this._openedSnackBarRef) {
+      // If a snack bar is already in view, dismiss it and enter the
+      // new snack bar after exit animation is complete.
       this._openedSnackBarRef.afterDismissed().subscribe(() => {
         snackBarRef.containerInstance.enter();
       });
       this._openedSnackBarRef.dismiss();
-    // If no snack bar is in view, enter the new snack bar.
     } else {
+      // If no snack bar is in view, enter the new snack bar.
       snackBarRef.containerInstance.enter();
     }
 
     // If a dismiss timeout is provided, set up dismiss based on after the snackbar is opened.
-    if (config.duration && config.duration > 0) {
-      snackBarRef.afterOpened().subscribe(() => {
-        setTimeout(() => snackBarRef.dismiss(), config!.duration);
-      });
+    if (_config.duration && _config.duration > 0) {
+      snackBarRef.afterOpened().subscribe(() => snackBarRef._dismissAfter(_config!.duration!));
     }
 
-    if (config.announcementMessage) {
-      this._live.announce(config.announcementMessage, config.politeness);
+    if (_config.announcementMessage) {
+      this._live.announce(_config.announcementMessage, _config.politeness);
     }
 
     this._openedSnackBarRef = snackBarRef;
@@ -107,15 +102,16 @@ export class MdSnackBar {
    * @param action The label for the snackbar action.
    * @param config Additional configuration options for the snackbar.
    */
-  open(message: string, action = '', config?: MdSnackBarConfig): MdSnackBarRef<SimpleSnackBar> {
-    let _config = _applyConfigDefaults(config);
+  open(message: string, action: string = '', config?: MatSnackBarConfig):
+      MatSnackBarRef<SimpleSnackBar> {
+    const _config = _applyConfigDefaults(config);
+
+    // Since the user doesn't have access to the component, we can
+    // override the data to pass in our own message and action.
+    _config.data = {message, action};
     _config.announcementMessage = message;
 
-    let simpleSnackBarRef = this.openFromComponent(SimpleSnackBar, _config);
-    simpleSnackBarRef.instance.snackBarRef = simpleSnackBarRef;
-    simpleSnackBarRef.instance.message = message;
-    simpleSnackBarRef.instance.action = action;
-    return simpleSnackBarRef;
+    return this.openFromComponent(SimpleSnackBar, _config);
   }
 
   /**
@@ -131,39 +127,93 @@ export class MdSnackBar {
    * Attaches the snack bar container component to the overlay.
    */
   private _attachSnackBarContainer(overlayRef: OverlayRef,
-                                   config: MdSnackBarConfig): MdSnackBarContainer {
-    let containerPortal = new ComponentPortal(MdSnackBarContainer, config.viewContainerRef);
-    let containerRef: ComponentRef<MdSnackBarContainer> = overlayRef.attach(containerPortal);
+                                   config: MatSnackBarConfig): MatSnackBarContainer {
+    const containerPortal = new ComponentPortal(MatSnackBarContainer, config.viewContainerRef);
+    const containerRef: ComponentRef<MatSnackBarContainer> = overlayRef.attach(containerPortal);
     containerRef.instance.snackBarConfig = config;
-
-    // The snackbar animation needs the content to be resolved in order to transform the bar
-    // out of the view initially (so it can slide in). To make the content resolve, we manually
-    // detect changes.
-    containerRef.changeDetectorRef.detectChanges();
-
     return containerRef.instance;
   }
 
   /**
    * Places a new component as the content of the snack bar container.
    */
-  private _attachSnackbarContent<T>(component: ComponentType<T>,
-                                    container: MdSnackBarContainer,
-                                    overlayRef: OverlayRef): MdSnackBarRef<T> {
-    let portal = new ComponentPortal(component);
-    let contentRef = container.attachComponentPortal(portal);
-    return new MdSnackBarRef(contentRef.instance, container, overlayRef);
+  private _attach<T>(component: ComponentType<T>, config: MatSnackBarConfig): MatSnackBarRef<T> {
+    const overlayRef = this._createOverlay(config);
+    const container = this._attachSnackBarContainer(overlayRef, config);
+    const snackBarRef = new MatSnackBarRef<T>(container, overlayRef);
+    const injector = this._createInjector(config, snackBarRef);
+    const portal = new ComponentPortal(component, undefined, injector);
+    const contentRef = container.attachComponentPortal(portal);
+
+    // We can't pass this via the injector, because the injector is created earlier.
+    snackBarRef.instance = contentRef.instance;
+
+    // Subscribe to the breakpoint observer and attach the mat-snack-bar-handset class as
+    // appropriate. This class is applied to the overlay element because the overlay must expand to
+    // fill the width of the screen for full width snackbars.
+    this._breakpointObserver.observe(Breakpoints.Handset).pipe(
+      takeUntil(overlayRef.detachments().pipe(take(1)))
+    ).subscribe(state => {
+      if (state.matches) {
+        overlayRef.overlayElement.classList.add('mat-snack-bar-handset');
+      } else {
+        overlayRef.overlayElement.classList.remove('mat-snack-bar-handset');
+      }
+    });
+
+    return snackBarRef;
   }
 
   /**
    * Creates a new overlay and places it in the correct location.
    * @param config The user-specified snack bar config.
    */
-  private _createOverlay(config: MdSnackBarConfig): OverlayRef {
-    let state = new OverlayState();
-    state.direction = config.direction;
-    state.positionStrategy = this._overlay.position().global().centerHorizontally().bottom('0');
-    return this._overlay.create(state);
+  private _createOverlay(config: MatSnackBarConfig): OverlayRef {
+    const overlayConfig = new OverlayConfig();
+    overlayConfig.direction = config.direction;
+
+    let positionStrategy = this._overlay.position().global();
+    // Set horizontal position.
+    const isRtl = config.direction === 'rtl';
+    const isLeft = (
+      config.horizontalPosition === 'left' ||
+      (config.horizontalPosition === 'start' && !isRtl) ||
+      (config.horizontalPosition === 'end' && isRtl));
+    const isRight = !isLeft && config.horizontalPosition !== 'center';
+    if (isLeft) {
+      positionStrategy.left('0');
+    } else if (isRight) {
+      positionStrategy.right('0');
+    } else {
+      positionStrategy.centerHorizontally();
+    }
+    // Set horizontal position.
+    if (config.verticalPosition === 'top') {
+      positionStrategy.top('0');
+    } else {
+      positionStrategy.bottom('0');
+    }
+
+    overlayConfig.positionStrategy = positionStrategy;
+    return this._overlay.create(overlayConfig);
+  }
+
+  /**
+   * Creates an injector to be used inside of a snack bar component.
+   * @param config Config that was used to create the snack bar.
+   * @param snackBarRef Reference to the snack bar.
+   */
+  private _createInjector<T>(
+      config: MatSnackBarConfig,
+      snackBarRef: MatSnackBarRef<T>): PortalInjector {
+
+    const userInjector = config && config.viewContainerRef && config.viewContainerRef.injector;
+    const injectionTokens = new WeakMap();
+
+    injectionTokens.set(MatSnackBarRef, snackBarRef);
+    injectionTokens.set(MAT_SNACK_BAR_DATA, config.data);
+
+    return new PortalInjector(userInjector || this._injector, injectionTokens);
   }
 }
 
@@ -172,6 +222,6 @@ export class MdSnackBar {
  * @param config The configuration to which the defaults will be applied.
  * @returns The new configuration object with defaults applied.
  */
-function _applyConfigDefaults(config?: MdSnackBarConfig): MdSnackBarConfig {
-  return extendObject(new MdSnackBarConfig(), config);
+function _applyConfigDefaults(config?: MatSnackBarConfig): MatSnackBarConfig {
+  return {...new MatSnackBarConfig(), ...config};
 }

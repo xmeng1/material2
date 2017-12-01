@@ -37,9 +37,19 @@ task('validate-release:check-bundles', () => {
 
 /** Task that validates the given release package before releasing. */
 function checkReleasePackage(packageName: string): string[] {
-  const bundlePath = join(releasesDir, packageName, '@angular', `${packageName}.js`);
+  return glob(join(releasesDir, packageName, 'esm2015/*.js'))
+    .reduce((failures: string[], bundlePath: string) => {
+      return failures.concat(checkEs2015ReleaseBundle(packageName, bundlePath));
+    }, []);
+}
+
+/**
+ * Checks an ES2015 bundle inside of a release package. Secondary entry-point bundles will be
+ * checked as well.
+ */
+function checkEs2015ReleaseBundle(packageName: string, bundlePath: string): string[] {
   const bundleContent = readFileSync(bundlePath, 'utf8');
-  let failures = [];
+  let failures: string[] = [];
 
   if (inlineStylesSourcemapRegex.exec(bundleContent) !== null) {
     failures.push('Bundles contain sourcemap references in component styles.');
@@ -61,7 +71,7 @@ function checkMaterialPackage(): string[] {
   const packagePath = join(releasesDir, 'material');
   const prebuiltThemesPath = join(packagePath, 'prebuilt-themes');
   const themingFilePath = join(packagePath, '_theming.scss');
-  const failures = [];
+  const failures: string[] = [];
 
   if (glob('*.css', {cwd: prebuiltThemesPath}).length === 0) {
     failures.push('Prebuilt themes are not present in the Material release output.');

@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
-import {Http} from '@angular/http';
+import {HttpClient} from '@angular/common/http';
 import * as firebase from 'firebase';
-import 'rxjs/add/operator/toPromise';
 
 const config = require('../config.json');
 
@@ -17,7 +16,7 @@ export class FirebaseService {
   /** The screenshot results */
   screenshotResultSummary: ScreenshotResultSummary;
 
-  constructor(private _http: Http) {
+  constructor(private _httpClient: HttpClient) {
     // Initialize Firebase
     firebase.initializeApp(config.firebase);
 
@@ -45,7 +44,7 @@ export class FirebaseService {
   /** Set pull request number. All test information and pull request information will be retrived
    * from database
    */
-  set prNumber(prNumber: string){
+  set prNumber(prNumber: string) {
     this.screenshotResultSummary = new ScreenshotResultSummary();
     this.screenshotResultSummary.prNumber = prNumber;
     this._readPullRequestScreenshotReport();
@@ -71,10 +70,9 @@ export class FirebaseService {
             this._readResults(childSnapshot);
             break;
         }
+
         counter++;
-        if (counter === snapshot.numChildren()) {
-          return true;
-        }
+        return counter === snapshot.numChildren();
       });
     });
   }
@@ -123,11 +121,11 @@ export class FirebaseService {
     this.screenshotResultSummary.testNames = [];
     this.screenshotResultSummary.testResultsByName.clear();
     childSnapshot.forEach((resultSnapshot: firebase.database.DataSnapshot) => {
-      this._addTestResults(resultSnapshot.key, resultSnapshot.val());
-      childCounter++;
-      if (childCounter === childSnapshot.numChildren()) {
-        return true;
+      if (resultSnapshot.key) {
+        this._addTestResults(resultSnapshot.key, resultSnapshot.val());
       }
+      childCounter++;
+      return childCounter === childSnapshot.numChildren();
     });
   }
 
@@ -158,19 +156,17 @@ export class FirebaseService {
     let url =
       `https://api.github.com/repos/${config.repoSlug}/commits/` +
       `${this.screenshotResultSummary.sha}/status`;
-    return this._http.get(url).toPromise()
-      .then((response) => {
-        let statusResponse = response.json();
-        let screenshotStatus = statusResponse.statuses.find((status) =>
-          status.context === 'Screenshot Tests');
-        switch (screenshotStatus && screenshotStatus.state) {
-          case 'success':
-            this.screenshotResultSummary.githubStatus = true;
-            break;
-          case 'failure':
-            this.screenshotResultSummary.githubStatus = false;
-            return;
-        }
-      });
+    return this._httpClient.get<{statuses: any[]}>(url).toPromise().then(response => {
+      const screenshotStatus = response.statuses.find(status =>
+        status.context === 'Screenshot Tests');
+      switch (screenshotStatus && screenshotStatus.state) {
+        case 'success':
+          this.screenshotResultSummary.githubStatus = true;
+          break;
+        case 'failure':
+          this.screenshotResultSummary.githubStatus = false;
+          return;
+      }
+    });
   }
 }

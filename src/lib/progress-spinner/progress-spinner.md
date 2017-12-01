@@ -1,10 +1,10 @@
-`<md-progress-spinner>` and `<md-spinner>` are a circular indicators of progress and activity.
+`<mat-progress-spinner>` and `<mat-spinner>` are a circular indicators of progress and activity.
 
 <!-- example(progress-spinner-overview) -->
 
 ### Progress mode
 The progress-spinner supports two modes, "determinate" and "indeterminate". 
-The `<md-spinner>` component is an alias for `<md-progress-spinner mode="indeterminate">`.
+The `<mat-spinner>` component is an alias for `<mat-progress-spinner mode="indeterminate">`.
 
 | Mode          | Description                                                                      |
 |---------------|----------------------------------------------------------------------------------|
@@ -21,3 +21,6 @@ In "indeterminate" mode, the `value` property is ignored.
 ### Theming
 The color of a progress-spinner can be changed by using the `color` property. By default, 
 progress-spinners use the theme's primary color. This can be changed to `'accent'` or `'warn'`.
+
+### Accessibility
+Each progress spinner should be given a meaningful label via `aria-label` or `aria-labelledby`.

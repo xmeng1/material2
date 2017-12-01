@@ -2,6 +2,7 @@ import {task, src, dest} from 'gulp';
 import {Dgeni} from 'dgeni';
 import * as path from 'path';
 import {buildConfig} from 'material2-build-tools';
+import {apiDocsPackage} from '../../dgeni/index';
 
 // There are no type definitions available for these imports.
 const markdown = require('gulp-markdown');
@@ -58,30 +59,62 @@ const htmlMinifierOptions = {
   removeAttributeQuotes: false
 };
 
+const markdownOptions = {
+  // Add syntax highlight using highlight.js
+  highlight: (code: string, language: string): string => {
+    if (language) {
+      // highlight.js expects "typescript" written out, while Github supports "ts".
+      let lang = language.toLowerCase() === 'ts' ? 'typescript' : language;
+      return hljs.highlight(lang, code).value;
+    }
+
+    return code;
+  }
+};
+
 /** Generate all docs content. */
 task('docs', [
   'markdown-docs',
+  'markdown-docs-cdk',
   'highlight-examples',
   'api-docs',
   'minified-api-docs',
-  'plunker-example-assets',
+  'build-examples-module',
+  'stackblitz-example-assets',
 ]);
 
-/** Generates html files from the markdown overviews and guides. */
+/** Generates html files from the markdown overviews and guides for material. */
 task('markdown-docs', () => {
-  return src(['src/lib/**/*.md', 'guides/*.md'])
-      .pipe(markdown({
-        // Add syntax highlight using highlight.js
-        highlight: (code: string, language: string) => {
-          if (language) {
-            // highlight.js expects "typescript" written out, while Github supports "ts".
-            let lang = language.toLowerCase() === 'ts' ? 'typescript' : language;
-            return hljs.highlight(lang, code).value;
-          }
+  // Extend the renderer for custom heading anchor rendering
+  markdown.marked.Renderer.prototype.heading = (text: string, level: number): string => {
+    if (level === 3 || level === 4) {
+      const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+      return `
+        <h${level} id="${escapedText}" class="docs-header-link">
+          <span header-link="${escapedText}"></span>
+          ${text}
+        </h${level}>
+      `;
+    } else {
+      return `<h${level}>${text}</h${level}>`;
+    }
+  };
 
-          return code;
-        }
-      }))
+  return src(['src/lib/**/!(README).md', 'guides/*.md'])
+      .pipe(rename({prefix: 'material-'}))
+      .pipe(markdown(markdownOptions))
+      .pipe(transform(transformMarkdownFiles))
+      .pipe(dom(createTagNameAliaser('docs-markdown')))
+      .pipe(dest('dist/docs/markdown'));
+});
+
+// TODO(jelbourn): figure out how to avoid duplicating this task w/ material while still
+// disambiguating the output.
+/** Generates html files from the markdown overviews and guides for the cdk. */
+task('markdown-docs-cdk', () => {
+  return src(['src/cdk/**/!(README).md'])
+      .pipe(rename({prefix: 'cdk-'}))
+      .pipe(markdown(markdownOptions))
       .pipe(transform(transformMarkdownFiles))
       .pipe(dom(createTagNameAliaser('docs-markdown')))
       .pipe(dest('dist/docs/markdown'));
@@ -93,9 +126,9 @@ task('markdown-docs', () => {
  */
 task('highlight-examples', () => {
   // rename files to fit format: [filename]-[filetype].html
-  const renameFile = (path: any) => {
-    const extension = path.extname.slice(1);
-    path.basename = `${path.basename}-${extension}`;
+  const renameFile = (filePath: any) => {
+    const extension = filePath.extname.slice(1);
+    filePath.basename = `${filePath.basename}-${extension}`;
   };
 
   return src('src/material-examples/**/*.+(html|css|ts)')
@@ -107,8 +140,7 @@ task('highlight-examples', () => {
 
 /** Generates API docs from the source JsDoc using dgeni. */
 task('api-docs', () => {
-  const docsPackage = require(path.resolve(__dirname, '../../dgeni'));
-  const docs = new Dgeni([docsPackage]);
+  const docs = new Dgeni([apiDocsPackage]);
   return docs.generate();
 });
 
@@ -119,10 +151,10 @@ task('minified-api-docs', ['api-docs'], () => {
     .pipe(dest('dist/docs/api/'));
 });
 
-/** Copies example sources to be used as plunker assets for the docs site. */
-task('plunker-example-assets', () => {
+/** Copies example sources to be used as stackblitz assets for the docs site. */
+task('stackblitz-example-assets', () => {
   src(path.join(packagesDir, 'material-examples', '**/*'))
-      .pipe(dest(path.join(DIST_DOCS, 'plunker', 'examples')));
+      .pipe(dest(path.join(DIST_DOCS, 'stackblitz', 'examples')));
 });
 
 /** Updates the markdown file's content to work inside of the docs app. */

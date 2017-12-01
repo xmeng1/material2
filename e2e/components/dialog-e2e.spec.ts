@@ -6,6 +6,7 @@ import {
   clickElementAtPoint,
   waitForElement,
 } from '../util/index';
+import {screenshot} from '../screenshot';
 
 
 describe('dialog', () => {
@@ -13,7 +14,8 @@ describe('dialog', () => {
 
   it('should open a dialog', () => {
     element(by.id('default')).click();
-    expectToExist('md-dialog-container');
+    expectToExist('mat-dialog-container');
+    screenshot('simple dialog opened');
   });
 
   it('should open a template dialog', () => {
@@ -27,7 +29,7 @@ describe('dialog', () => {
 
     await waitForDialog();
     clickOnBackrop();
-    expectToExist('md-dialog-container', false);
+    expectToExist('mat-dialog-container', false);
   });
 
   it('should close by pressing escape', async () => {
@@ -35,7 +37,7 @@ describe('dialog', () => {
 
     await waitForDialog();
     pressKeys(Key.ESCAPE);
-    expectToExist('md-dialog-container', false);
+    expectToExist('mat-dialog-container', false);
   });
 
   it('should close by pressing escape when the first tabbable element has lost focus',
@@ -43,9 +45,9 @@ describe('dialog', () => {
       element(by.id('default')).click();
 
       await waitForDialog();
-      clickElementAtPoint('md-dialog-container', { x: 0, y: 0 });
+      clickElementAtPoint('mat-dialog-container', { x: 0, y: 0 });
       pressKeys(Key.ESCAPE);
-      expectToExist('md-dialog-container', false);
+      expectToExist('mat-dialog-container', false);
     });
 
   it('should close by clicking on the "close" button', async () => {
@@ -53,14 +55,14 @@ describe('dialog', () => {
 
     await waitForDialog();
     element(by.id('close')).click();
-    expectToExist('md-dialog-container', false);
+    expectToExist('mat-dialog-container', false);
   });
 
   it('should focus the first focusable element', async () => {
     element(by.id('default')).click();
 
     await waitForDialog();
-    expectFocusOn('md-dialog-container input');
+    expectFocusOn('mat-dialog-container input');
   });
 
   it('should restore focus to the element that opened the dialog', async () => {
@@ -86,7 +88,7 @@ describe('dialog', () => {
 
     await waitForDialog();
     clickOnBackrop();
-    expectToExist('md-dialog-container');
+    expectToExist('mat-dialog-container');
   });
 
   it('should be able to prevent closing by pressing escape', async () => {
@@ -94,11 +96,11 @@ describe('dialog', () => {
 
     await waitForDialog();
     pressKeys(Key.ESCAPE);
-    expectToExist('md-dialog-container');
+    expectToExist('mat-dialog-container');
   });
 
   function waitForDialog() {
-    return waitForElement('md-dialog-container');
+    return waitForElement('mat-dialog-container');
   }
 
   function clickOnBackrop() {

@@ -1,26 +1,14 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {
-  Component,
-  ElementRef,
-  EventEmitter,
-  forwardRef,
-  Input,
-  OnDestroy,
-  Optional,
-  Output,
-  Renderer2,
-  ViewEncapsulation
-} from '@angular/core';
-import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
-import {coerceBooleanProperty, coerceNumberProperty, HammerInput} from '../core';
-import {Directionality} from '../core/bidi/index';
+import {FocusMonitor, FocusOrigin} from '@angular/cdk/a11y';
+import {Directionality} from '@angular/cdk/bidi';
+import {coerceBooleanProperty, coerceNumberProperty} from '@angular/cdk/coercion';
 import {
   DOWN_ARROW,
   END,
@@ -29,11 +17,35 @@ import {
   PAGE_DOWN,
   PAGE_UP,
   RIGHT_ARROW,
-  UP_ARROW
-} from '../core/keyboard/keycodes';
-import {FocusOrigin, FocusOriginMonitor} from '../core/style/focus-origin-monitor';
-import {mixinDisabled, CanDisable} from '../core/common-behaviors/disabled';
-
+  UP_ARROW,
+} from '@angular/cdk/keycodes';
+import {
+  Attribute,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  forwardRef,
+  Input,
+  OnDestroy,
+  OnInit,
+  Optional,
+  Output,
+  ViewChild,
+  ViewEncapsulation,
+} from '@angular/core';
+import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
+import {
+  CanColor,
+  CanDisable,
+  HammerInput,
+  HasTabIndex,
+  mixinColor,
+  mixinDisabled,
+  mixinTabIndex,
+} from '@angular/material/core';
+import {Subscription} from 'rxjs/Subscription';
 
 /**
  * Visually, a 30px separation between tick marks looks best. This is very subjective but it is
@@ -51,28 +63,32 @@ const MIN_VALUE_NONACTIVE_THUMB_GAP = 7;
 const MIN_VALUE_ACTIVE_THUMB_GAP = 10;
 
 /**
- * Provider Expression that allows md-slider to register as a ControlValueAccessor.
+ * Provider Expression that allows mat-slider to register as a ControlValueAccessor.
  * This allows it to support [(ngModel)] and [formControl].
  */
-export const MD_SLIDER_VALUE_ACCESSOR: any = {
+export const MAT_SLIDER_VALUE_ACCESSOR: any = {
   provide: NG_VALUE_ACCESSOR,
-  useExisting: forwardRef(() => MdSlider),
+  useExisting: forwardRef(() => MatSlider),
   multi: true
 };
 
-/** A simple change event emitted by the MdSlider component. */
-export class MdSliderChange {
-  /** The MdSlider that changed. */
-  source: MdSlider;
+/** A simple change event emitted by the MatSlider component. */
+export class MatSliderChange {
+  /** The MatSlider that changed. */
+  source: MatSlider;
 
   /** The new value of the source slider. */
   value: number | null;
 }
 
 
-// Boilerplate for applying mixins to MdSlider.
-export class MdSliderBase { }
-export const _MdSliderMixinBase = mixinDisabled(MdSliderBase);
+// Boilerplate for applying mixins to MatSlider.
+/** @docs-private */
+export class MatSliderBase {
+  constructor(public _elementRef: ElementRef) {}
+}
+export const _MatSliderMixinBase =
+  mixinTabIndex(mixinColor(mixinDisabled(MatSliderBase), 'accent'));
 
 /**
  * Allows users to select from a range of values by moving the slider thumb. It is similar in
@@ -80,8 +96,9 @@ export const _MdSliderMixinBase = mixinDisabled(MdSliderBase);
  */
 @Component({
   moduleId: module.id,
-  selector: 'md-slider, mat-slider',
-  providers: [MD_SLIDER_VALUE_ACCESSOR],
+  selector: 'mat-slider',
+  exportAs: 'matSlider',
+  providers: [MAT_SLIDER_VALUE_ACCESSOR],
   host: {
     '(focus)': '_onFocus()',
     '(blur)': '_onBlur()',
@@ -94,15 +111,12 @@ export const _MdSliderMixinBase = mixinDisabled(MdSliderBase);
     '(slidestart)': '_onSlideStart($event)',
     'class': 'mat-slider',
     'role': 'slider',
-    'tabindex': '0',
+    '[tabIndex]': 'tabIndex',
     '[attr.aria-disabled]': 'disabled',
     '[attr.aria-valuemax]': 'max',
     '[attr.aria-valuemin]': 'min',
     '[attr.aria-valuenow]': 'value',
     '[attr.aria-orientation]': 'vertical ? "vertical" : "horizontal"',
-    '[class.mat-primary]': 'color == "primary"',
-    '[class.mat-accent]': 'color != "primary" && color != "warn"',
-    '[class.mat-warn]': 'color == "warn"',
     '[class.mat-slider-disabled]': 'disabled',
     '[class.mat-slider-has-ticks]': 'tickInterval',
     '[class.mat-slider-horizontal]': '!vertical',
@@ -115,33 +129,36 @@ export const _MdSliderMixinBase = mixinDisabled(MdSliderBase);
   },
   templateUrl: 'slider.html',
   styleUrls: ['slider.css'],
-  inputs: ['disabled'],
+  inputs: ['disabled', 'color', 'tabIndex'],
   encapsulation: ViewEncapsulation.None,
+  preserveWhitespaces: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MdSlider extends _MdSliderMixinBase
-    implements ControlValueAccessor, OnDestroy, CanDisable {
+export class MatSlider extends _MatSliderMixinBase
+    implements ControlValueAccessor, OnDestroy, CanDisable, CanColor, OnInit, HasTabIndex {
   /** Whether the slider is inverted. */
   @Input()
   get invert() { return this._invert; }
-  set invert(value: any) { this._invert = coerceBooleanProperty(value); }
+  set invert(value: any) {
+    this._invert = coerceBooleanProperty(value);
+  }
   private _invert = false;
 
   /** The maximum value that the slider can have. */
   @Input()
-  get max() {
-    return this._max;
-  }
+  get max() { return this._max; }
   set max(v: number) {
     this._max = coerceNumberProperty(v, this._max);
     this._percent = this._calculatePercentage(this._value);
+
+    // Since this also modifies the percentage, we need to let the change detection know.
+    this._changeDetectorRef.markForCheck();
   }
   private _max: number = 100;
 
   /** The minimum value that the slider can have. */
   @Input()
-  get min() {
-    return this._min;
-  }
+  get min() { return this._min; }
   set min(v: number) {
     this._min = coerceNumberProperty(v, this._min);
 
@@ -150,18 +167,24 @@ export class MdSlider extends _MdSliderMixinBase
       this.value = this._min;
     }
     this._percent = this._calculatePercentage(this._value);
+
+    // Since this also modifies the percentage, we need to let the change detection know.
+    this._changeDetectorRef.markForCheck();
   }
   private _min: number = 0;
 
   /** The values at which the thumb will snap. */
   @Input()
   get step() { return this._step; }
-  set step(v) {
+  set step(v: number) {
     this._step = coerceNumberProperty(v, this._step);
 
     if (this._step % 1 !== 0) {
       this._roundLabelTo = this._step.toString().split('.').pop()!.length;
     }
+
+    // Since this could modify the label, we need to notify the change detection.
+    this._changeDetectorRef.markForCheck();
   }
   private _step: number = 1;
 
@@ -182,7 +205,7 @@ export class MdSlider extends _MdSliderMixinBase
    */
   @Input()
   get tickInterval() { return this._tickInterval; }
-  set tickInterval(value) {
+  set tickInterval(value: 'auto' | number) {
     if (value === 'auto') {
       this._tickInterval = 'auto';
     } else if (typeof value === 'number' || typeof value === 'string') {
@@ -208,24 +231,29 @@ export class MdSlider extends _MdSliderMixinBase
     return this._value;
   }
   set value(v: number | null) {
-    this._value = coerceNumberProperty(v, this._value || 0);
-    this._percent = this._calculatePercentage(this._value);
+    if (v !== this._value) {
+      this._value = coerceNumberProperty(v, this._value || 0);
+      this._percent = this._calculatePercentage(this._value);
+
+      // Since this also modifies the percentage, we need to let the change detection know.
+      this._changeDetectorRef.markForCheck();
+    }
   }
   private _value: number | null = null;
 
   /** Whether the slider is vertical. */
   @Input()
   get vertical() { return this._vertical; }
-  set vertical(value: any) { this._vertical = coerceBooleanProperty(value); }
+  set vertical(value: any) {
+    this._vertical = coerceBooleanProperty(value);
+  }
   private _vertical = false;
 
-  @Input() color: 'primary' | 'accent' | 'warn' = 'accent';
-
   /** Event emitted when the slider value has changed. */
-  @Output() change = new EventEmitter<MdSliderChange>();
+  @Output() change = new EventEmitter<MatSliderChange>();
 
   /** Event emitted when the slider thumb moves. */
-  @Output() input = new EventEmitter<MdSliderChange>();
+  @Output() input = new EventEmitter<MatSliderChange>();
 
   /** The value to be used for display purposes. */
   get displayValue(): string | number {
@@ -243,7 +271,7 @@ export class MdSlider extends _MdSliderMixinBase
   onTouched: () => any = () => {};
 
   /** The percentage of the slider that coincides with the value. */
-  get percent() { return this._clamp(this._percent); }
+  get percent(): number { return this._clamp(this._percent); }
   private _percent: number = 0;
 
   /**
@@ -359,22 +387,22 @@ export class MdSlider extends _MdSliderMixinBase
   /** The size of a tick interval as a percentage of the size of the track. */
   private _tickIntervalPercent: number = 0;
 
-  /** A renderer to handle updating the slider's thumb and fill track. */
-  private _renderer: SliderRenderer;
-
   /** The dimensions of the slider. */
   private _sliderDimensions: ClientRect | null = null;
 
   private _controlValueAccessorChangeFn: (value: any) => void = () => {};
 
-  /** The last value for which a change event was emitted. */
-  private _lastChangeValue: number | null;
-
-  /** The last value for which an input event was emitted. */
-  private _lastInputValue: number | null;
-
   /** Decimal places to round to, based on the step amount. */
   private _roundLabelTo: number;
+
+  /** Subscription to the Directionality change EventEmitter. */
+  private _dirChangeSubscription = Subscription.EMPTY;
+
+  /** The value of the slider when the slide start event fires. */
+  private _valueOnSlideStart: number | null;
+
+  /** Reference to the inner slider wrapper element. */
+  @ViewChild('sliderWrapper') private _sliderWrapper: ElementRef;
 
   /**
    * Whether mouse events should be converted to a slider position by calculating their distance
@@ -389,17 +417,33 @@ export class MdSlider extends _MdSliderMixinBase
     return (this._dir && this._dir.value == 'rtl') ? 'rtl' : 'ltr';
   }
 
-  constructor(renderer: Renderer2, private _elementRef: ElementRef,
-              private _focusOriginMonitor: FocusOriginMonitor,
-              @Optional() private _dir: Directionality) {
-    super();
-    this._focusOriginMonitor.monitor(this._elementRef.nativeElement, renderer, true)
-        .subscribe((origin: FocusOrigin) => this._isActive = !!origin && origin !== 'keyboard');
-    this._renderer = new SliderRenderer(this._elementRef);
+  constructor(elementRef: ElementRef,
+              private _focusMonitor: FocusMonitor,
+              private _changeDetectorRef: ChangeDetectorRef,
+              @Optional() private _dir: Directionality,
+              @Attribute('tabindex') tabIndex: string) {
+    super(elementRef);
+
+    this.tabIndex = parseInt(tabIndex) || 0;
+  }
+
+  ngOnInit() {
+    this._focusMonitor
+        .monitor(this._elementRef.nativeElement, true)
+        .subscribe((origin: FocusOrigin) => {
+          this._isActive = !!origin && origin !== 'keyboard';
+          this._changeDetectorRef.detectChanges();
+        });
+    if (this._dir) {
+      this._dirChangeSubscription = this._dir.change.subscribe(() => {
+        this._changeDetectorRef.markForCheck();
+      });
+    }
   }
 
   ngOnDestroy() {
-    this._focusOriginMonitor.stopMonitoring(this._elementRef.nativeElement);
+    this._focusMonitor.stopMonitoring(this._elementRef.nativeElement);
+    this._dirChangeSubscription.unsubscribe();
   }
 
   _onMouseenter() {
@@ -409,7 +453,7 @@ export class MdSlider extends _MdSliderMixinBase
 
     // We save the dimensions of the slider here so we can use them to update the spacing of the
     // ticks and determine where on the slider click and slide events happen.
-    this._sliderDimensions = this._renderer.getSliderDimensions();
+    this._sliderDimensions = this._getSliderDimensions();
     this._updateTickIntervalPercent();
   }
 
@@ -418,13 +462,16 @@ export class MdSlider extends _MdSliderMixinBase
       return;
     }
 
+    let oldValue = this.value;
     this._isSliding = false;
-    this._renderer.addFocus();
+    this._focusHostElement();
     this._updateValueFromPosition({x: event.clientX, y: event.clientY});
 
-    /* Emits a change and input event if the value changed. */
-    this._emitInputEvent();
-    this._emitValueIfChanged();
+    /* Emit a change and input event if the value changed. */
+    if (oldValue != this.value) {
+      this._emitInputEvent();
+      this._emitChangeEvent();
+    }
   }
 
   _onSlide(event: HammerInput) {
@@ -432,37 +479,55 @@ export class MdSlider extends _MdSliderMixinBase
       return;
     }
 
+    // The slide start event sometimes fails to fire on iOS, so if we're not already in the sliding
+    // state, call the slide start handler manually.
+    if (!this._isSliding) {
+      this._onSlideStart(null);
+    }
+
     // Prevent the slide from selecting anything else.
     event.preventDefault();
+
+    let oldValue = this.value;
     this._updateValueFromPosition({x: event.center.x, y: event.center.y});
 
     // Native range elements always emit `input` events when the value changed while sliding.
-    this._emitInputEvent();
+    if (oldValue != this.value) {
+      this._emitInputEvent();
+    }
   }
 
-  _onSlideStart(event: HammerInput) {
-    if (this.disabled) {
+  _onSlideStart(event: HammerInput | null) {
+    if (this.disabled || this._isSliding) {
       return;
     }
 
     // Simulate mouseenter in case this is a mobile device.
     this._onMouseenter();
 
-    event.preventDefault();
     this._isSliding = true;
-    this._renderer.addFocus();
-    this._updateValueFromPosition({x: event.center.x, y: event.center.y});
+    this._focusHostElement();
+    this._valueOnSlideStart = this.value;
+
+    if (event) {
+      this._updateValueFromPosition({x: event.center.x, y: event.center.y});
+      event.preventDefault();
+    }
   }
 
   _onSlideEnd() {
     this._isSliding = false;
-    this._emitValueIfChanged();
+
+    if (this._valueOnSlideStart != this.value) {
+      this._emitChangeEvent();
+    }
+    this._valueOnSlideStart = null;
   }
 
   _onFocus() {
     // We save the dimensions of the slider here so we can use them to update the spacing of the
     // ticks and determine where on the slider click and slide events happen.
-    this._sliderDimensions = this._renderer.getSliderDimensions();
+    this._sliderDimensions = this._getSliderDimensions();
     this._updateTickIntervalPercent();
   }
 
@@ -472,6 +537,8 @@ export class MdSlider extends _MdSliderMixinBase
 
   _onKeydown(event: KeyboardEvent) {
     if (this.disabled) { return; }
+
+    let oldValue = this.value;
 
     switch (event.keyCode) {
       case PAGE_UP:
@@ -512,6 +579,11 @@ export class MdSlider extends _MdSliderMixinBase
         return;
     }
 
+    if (oldValue != this.value) {
+      this._emitInputEvent();
+      this._emitChangeEvent();
+    }
+
     this._isSliding = true;
     event.preventDefault();
   }
@@ -523,8 +595,6 @@ export class MdSlider extends _MdSliderMixinBase
   /** Increments the slider by the given number of steps (negative number decrements). */
   private _increment(numSteps: number) {
     this.value = this._clamp((this.value || 0) + this.step * numSteps, this.min, this.max);
-    this._emitInputEvent();
-    this._emitValueIfChanged();
   }
 
   /** Calculate the new value from the new physical location. The value will always be snapped. */
@@ -552,22 +622,14 @@ export class MdSlider extends _MdSliderMixinBase
   }
 
   /** Emits a change event if the current value is different from the last emitted value. */
-  private _emitValueIfChanged() {
-    if (this.value != this._lastChangeValue) {
-      let event = this._createChangeEvent();
-      this._lastChangeValue = this.value;
-      this._controlValueAccessorChangeFn(this.value);
-      this.change.emit(event);
-    }
+  private _emitChangeEvent() {
+    this._controlValueAccessorChangeFn(this.value);
+    this.change.emit(this._createChangeEvent());
   }
 
   /** Emits an input event when the current value is different from the last emitted value. */
   private _emitInputEvent() {
-    if (this.value != this._lastInputValue) {
-      let event = this._createChangeEvent();
-      this._lastInputValue = this.value;
-      this.input.emit(event);
-    }
+    this.input.emit(this._createChangeEvent());
   }
 
   /** Updates the amount of space between ticks as a percentage of the width of the slider. */
@@ -588,8 +650,8 @@ export class MdSlider extends _MdSliderMixinBase
   }
 
   /** Creates a slider change object from the specified value. */
-  private _createChangeEvent(value = this.value): MdSliderChange {
-    let event = new MdSliderChange();
+  private _createChangeEvent(value = this.value): MatSliderChange {
+    let event = new MatSliderChange();
 
     event.source = this;
     event.value = value;
@@ -610,6 +672,23 @@ export class MdSlider extends _MdSliderMixinBase
   /** Return a number between two numbers. */
   private _clamp(value: number, min = 0, max = 1) {
     return Math.max(min, Math.min(value, max));
+  }
+
+  /**
+   * Get the bounding client rect of the slider track element.
+   * The track is used rather than the native element to ignore the extra space that the thumb can
+   * take up.
+   */
+  private _getSliderDimensions() {
+    return this._sliderWrapper ? this._sliderWrapper.nativeElement.getBoundingClientRect() : null;
+  }
+
+  /**
+   * Focuses the native element.
+   * Currently only used to allow a blur event to fire but will be used with keyboard input later.
+   */
+  private _focusHostElement() {
+    this._elementRef.nativeElement.focus();
   }
 
   /**
@@ -645,35 +724,5 @@ export class MdSlider extends _MdSliderMixinBase
    */
   setDisabledState(isDisabled: boolean) {
     this.disabled = isDisabled;
-  }
-}
-
-/**
- * Renderer class in order to keep all dom manipulation in one place and outside of the main class.
- * @docs-private
- */
-export class SliderRenderer {
-  private _sliderElement: HTMLElement;
-
-  constructor(elementRef: ElementRef) {
-    this._sliderElement = elementRef.nativeElement;
-  }
-
-  /**
-   * Get the bounding client rect of the slider track element.
-   * The track is used rather than the native element to ignore the extra space that the thumb can
-   * take up.
-   */
-  getSliderDimensions() {
-    let wrapperElement = this._sliderElement.querySelector('.mat-slider-wrapper');
-    return wrapperElement ? wrapperElement.getBoundingClientRect() : null;
-  }
-
-  /**
-   * Focuses the native element.
-   * Currently only used to allow a blur event to fire but will be used with keyboard input later.
-   */
-  addFocus() {
-    this._sliderElement.focus();
   }
 }

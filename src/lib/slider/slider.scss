@@ -93,7 +93,8 @@ $mat-slider-focus-ring-size: 30px !default;
               background-color $swift-ease-out-duration $swift-ease-out-timing-function,
               opacity $swift-ease-out-duration $swift-ease-out-timing-function;
 
-  .cdk-keyboard-focused & {
+  .cdk-keyboard-focused &,
+  .cdk-program-focused & {
     transform: scale(1);
     opacity: 1;
   }
@@ -214,26 +215,28 @@ $mat-slider-focus-ring-size: 30px !default;
 
 
 // Active slider.
-.cdk-focused {
-  &.mat-slider-thumb-label-showing .mat-slider-thumb {
-    transform: scale(0);
+.mat-slider:not(.mat-slider-disabled) {
+  &.cdk-focused {
+    &.mat-slider-thumb-label-showing .mat-slider-thumb {
+      transform: scale(0);
+    }
+
+    .mat-slider-thumb-label {
+      border-radius: 50% 50% 0;
+    }
+
+    .mat-slider-thumb-label-text {
+      opacity: 1;
+    }
   }
 
-  .mat-slider-thumb-label {
-    border-radius: 50% 50% 0;
-  }
-
-  .mat-slider-thumb-label-text {
-    opacity: 1;
-  }
-}
-
-.cdk-mouse-focused,
-.cdk-touch-focused,
-.cdk-program-focused {
-  .mat-slider-thumb {
-    border-width: $mat-slider-thumb-border-width-active;
-    transform: scale($mat-slider-thumb-focus-scale);
+  &.cdk-mouse-focused,
+  &.cdk-touch-focused,
+  &.cdk-program-focused {
+    .mat-slider-thumb {
+      border-width: $mat-slider-thumb-border-width-active;
+      transform: scale($mat-slider-thumb-focus-scale);
+    }
   }
 }
 
@@ -316,7 +319,8 @@ $mat-slider-focus-ring-size: 30px !default;
   .mat-slider-thumb-label {
     right: -$mat-slider-thumb-label-size / 2;
     top: -($mat-slider-thumb-label-size + $mat-slider-thumb-arrow-gap);
-    transform: translateY($mat-slider-thumb-label-size / 2 + $mat-slider-thumb-arrow-gap) scale(0.01)
+    transform: translateY($mat-slider-thumb-label-size / 2 + $mat-slider-thumb-arrow-gap)
+        scale(0.01)
         rotate(45deg);
   }
 
@@ -392,7 +396,8 @@ $mat-slider-focus-ring-size: 30px !default;
   .mat-slider-thumb-label {
     bottom: -$mat-slider-thumb-label-size / 2;
     left: -($mat-slider-thumb-label-size + $mat-slider-thumb-arrow-gap);
-    transform: translateX($mat-slider-thumb-label-size / 2 + $mat-slider-thumb-arrow-gap) scale(0.01)
+    transform: translateX($mat-slider-thumb-label-size / 2 + $mat-slider-thumb-arrow-gap)
+        scale(0.01)
         rotate(-45deg);
   }
 

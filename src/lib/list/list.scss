@@ -1,5 +1,6 @@
 @import '../core/style/variables';
 @import '../core/style/list-common';
+@import '../core/style/layout-common';
 
 
 $mat-list-side-padding: 16px;
@@ -14,6 +15,7 @@ $mat-list-avatar-height: 56px;
 // spec requires two- and three-line lists be taller
 $mat-list-two-line-height: 72px;
 $mat-list-three-line-height: 88px;
+$mat-list-multi-line-padding: 16px;
 $mat-list-icon-size: 24px;
 
 // Dense list variables
@@ -22,33 +24,39 @@ $mat-dense-base-height: 40px;
 $mat-dense-avatar-height: 48px;
 $mat-dense-two-line-height: 60px;
 $mat-dense-three-line-height: 76px;
+$mat-dense-multi-line-padding: 16px;
 $mat-dense-list-icon-size: 20px;
 
 // This mixin provides all list-item styles, changing font size and height
 // based on whether the list is in dense mode.
-@mixin mat-list-item-base($base-height, $avatar-height,
-  $two-line-height, $three-line-height, $icon-size) {
+@mixin mat-list-item-base($base-height, $avatar-height, $two-line-height,
+  $three-line-height, $multi-line-padding, $icon-size) {
 
   // Prevents the wrapper `mat-list-item-content` from collapsing due to it
   // being `inline` by default.
   display: block;
+  height: $base-height;
 
   .mat-list-item-content {
     display: flex;
     flex-direction: row;
     align-items: center;
     box-sizing: border-box;
-    height: $base-height;
     padding: 0 $mat-list-side-padding;
     position: relative;
+    height: inherit;
+  }
+
+  .mat-list-item-content-reverse {
+    display: flex;
+    align-items: center;
+    padding: 0 $mat-list-side-padding;
+    flex-direction: row-reverse;
+    justify-content: space-around;
   }
 
   .mat-list-item-ripple {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    @include mat-fill;
 
     // Disable pointer events for the ripple container because the container will overlay the
     // user content and we don't want to disable mouse events on the user content.
@@ -56,24 +64,28 @@ $mat-dense-list-icon-size: 20px;
     pointer-events: none;
   }
 
-  &.mat-list-item-avatar .mat-list-item-content {
+  &.mat-list-item-avatar {
     height: $avatar-height;
   }
 
-  &.mat-2-line .mat-list-item-content {
+  &.mat-2-line {
     height: $two-line-height;
   }
 
 
-  &.mat-3-line .mat-list-item-content {
+  &.mat-3-line {
     height: $three-line-height;
   }
 
   // list items with more than 3 lines should expand to match
   // the height of its contained text
-  &.mat-multi-line .mat-list-item-content {
-    height: 100%;
-    padding: 8px $mat-list-side-padding;
+  &.mat-multi-line {
+    height: auto;
+
+    .mat-list-item-content {
+      padding-top: $multi-line-padding;
+      padding-bottom: $multi-line-padding;
+    }
   }
 
   .mat-list-text {
@@ -107,22 +119,31 @@ $mat-dense-list-icon-size: 20px;
 }
 
 .mat-subheader {
-  display: block;
+  display: flex;
   box-sizing: border-box;
   padding: $mat-list-side-padding;
-  margin: 0;
+  align-items: center;
+
+  // This needs slightly more specificity, because it
+  // can be overwritten by the typography styles.
+  .mat-list &,
+  .mat-nav-list &,
+  .mat-selection-list & {
+    margin: 0;
+  }
 }
 
 // This mixin adjusts the heights and padding based on whether the list is in dense mode.
 @mixin mat-subheader-spacing($top-padding, $base-height) {
   height: $base-height;
+  line-height: $base-height - $mat-list-side-padding * 2;
 
   &:first-child {
     margin-top: -$top-padding;
   }
 }
 
-.mat-list, .mat-nav-list {
+.mat-list, .mat-nav-list, .mat-selection-list {
   padding-top: $mat-list-top-padding;
   display: block;
 
@@ -130,19 +151,21 @@ $mat-dense-list-icon-size: 20px;
     @include mat-subheader-spacing($mat-list-top-padding, $mat-list-base-height);
   }
 
-  .mat-list-item {
+  .mat-list-item, .mat-list-option {
     @include mat-list-item-base(
       $mat-list-base-height,
       $mat-list-avatar-height,
       $mat-list-two-line-height,
       $mat-list-three-line-height,
+      $mat-list-multi-line-padding,
       $mat-list-icon-size
     );
   }
 }
 
 
-.mat-list[dense], .mat-nav-list[dense] {
+.mat-list[dense], .mat-nav-list[dense], .mat-selection-list[dense] {
+
   padding-top: $mat-dense-top-padding;
   display: block;
 
@@ -150,12 +173,13 @@ $mat-dense-list-icon-size: 20px;
     @include mat-subheader-spacing($mat-dense-top-padding, $mat-dense-base-height);
   }
 
-  .mat-list-item {
+  .mat-list-item, .mat-list-option {
     @include mat-list-item-base(
       $mat-dense-base-height,
       $mat-dense-avatar-height,
       $mat-dense-two-line-height,
       $mat-dense-three-line-height,
+      $mat-dense-multi-line-padding,
       $mat-dense-list-icon-size
     );
   }
@@ -180,5 +204,11 @@ $mat-dense-list-icon-size: 20px;
     &:hover, &.mat-list-item-focus {
       outline: none;
     }
+  }
+}
+
+.mat-list-option {
+  &:not([disabled]) {
+    cursor: pointer;
   }
 }

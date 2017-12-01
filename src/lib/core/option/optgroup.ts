@@ -1,29 +1,33 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Component, ViewEncapsulation, ContentChildren, QueryList, Input} from '@angular/core';
+import {Component, ViewEncapsulation, Input, ChangeDetectionStrategy} from '@angular/core';
 import {mixinDisabled, CanDisable} from '../common-behaviors/disabled';
 
-// Boilerplate for applying mixins to MdOptgroup.
-export class MdOptgroupBase { }
-export const _MdOptgroupMixinBase = mixinDisabled(MdOptgroupBase);
+// Boilerplate for applying mixins to MatOptgroup.
+/** @docs-private */
+export class MatOptgroupBase { }
+export const _MatOptgroupMixinBase = mixinDisabled(MatOptgroupBase);
 
 // Counter for unique group ids.
 let _uniqueOptgroupIdCounter = 0;
 
 /**
- * Component that is used to group instances of `md-option`.
+ * Component that is used to group instances of `mat-option`.
  */
 @Component({
   moduleId: module.id,
-  selector: 'md-optgroup, mat-optgroup',
+  selector: 'mat-optgroup',
+  exportAs: 'matOptgroup',
   templateUrl: 'optgroup.html',
   encapsulation: ViewEncapsulation.None,
+  preserveWhitespaces: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   inputs: ['disabled'],
   host: {
     'class': 'mat-optgroup',
@@ -33,7 +37,7 @@ let _uniqueOptgroupIdCounter = 0;
     '[attr.aria-labelledby]': '_labelId',
   }
 })
-export class MdOptgroup extends _MdOptgroupMixinBase implements CanDisable {
+export class MatOptgroup extends _MatOptgroupMixinBase implements CanDisable {
   /** Label for the option group. */
   @Input() label: string;
 

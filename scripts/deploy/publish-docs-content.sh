@@ -3,7 +3,16 @@
 # Publish material2 docs assets to the material2-docs-content repo
 # material.angular.io will pull from this assets repo to get the latest docs
 
+# The script should immediately exit if any command in the script fails.
+set -e
+
 cd "$(dirname $0)/../../"
+
+if [ -z ${MATERIAL2_DOCS_CONTENT_TOKEN} ]; then
+  echo "Error: No access token for GitHub could be found." \
+       "Please set the environment variable 'MATERIAL2_DOCS_CONTENT_TOKEN'."
+  exit 1
+fi
 
 docsPath="./dist/docs"
 packagePath="./dist/releases/material-examples"
@@ -31,7 +40,7 @@ git clone $repoUrl $repoPath --depth 1
 rm -rf $repoPath/*
 
 # Create folders that will contain docs content files.  
-mkdir $repoPath/{overview,guides,api,examples,plunker,examples-package}
+mkdir $repoPath/{overview,guides,api,examples,stackblitz,examples-package}
 
 # Copy api files over to $repoPath/api
 cp -r $docsPath/api/* $repoPath/api
@@ -66,8 +75,8 @@ done
 # Copy highlighted examples into $repoPath
 cp -r $examplesSource/* $repoPath/examples
 
-# Copy example plunker assets
-cp -r $docsPath/plunker/* $repoPath/plunker
+# Copy example stackblitz assets
+cp -r $docsPath/stackblitz/* $repoPath/stackblitz
 
 # Copies assets over to the docs-content repository.
 cp LICENSE $repoPath/
@@ -81,6 +90,6 @@ git config credential.helper "store --file=.git/credentials"
 echo "https://${MATERIAL2_DOCS_CONTENT_TOKEN}:@github.com" > .git/credentials
 
 git add -A
-git commit -m "$commitMessage"
+git commit --allow-empty -m "$commitMessage"
 git tag "$commitSha"
 git push origin master --tags

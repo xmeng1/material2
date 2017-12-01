@@ -1,18 +1,18 @@
 import {TestBed, ComponentFixture, fakeAsync, tick, inject} from '@angular/core/testing';
 import {Component, ViewChild} from '@angular/core';
-import {ViewportRuler} from '../overlay/position/viewport-ruler';
+import {Platform} from '@angular/cdk/platform';
+import {dispatchMouseEvent, dispatchTouchEvent} from '@angular/cdk/testing';
 import {RIPPLE_FADE_OUT_DURATION, RIPPLE_FADE_IN_DURATION} from './ripple-renderer';
-import {dispatchMouseEvent} from '../testing/dispatch-events';
 import {
-  MdRipple, MdRippleModule, MD_RIPPLE_GLOBAL_OPTIONS, RippleState, RippleGlobalOptions
+  MatRipple, MatRippleModule, MAT_RIPPLE_GLOBAL_OPTIONS, RippleState, RippleGlobalOptions
 } from './index';
 
 
-describe('MdRipple', () => {
+describe('MatRipple', () => {
   let fixture: ComponentFixture<any>;
   let rippleTarget: HTMLElement;
   let originalBodyMargin: string | null;
-  let viewportRuler: ViewportRuler;
+  let platform: Platform;
 
   /** Extracts the numeric value of a pixel size string like '123px'.  */
   const pxStringToFloat = s => parseFloat(s) || 0;
@@ -21,7 +21,7 @@ describe('MdRipple', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [MdRippleModule],
+      imports: [MatRippleModule],
       declarations: [
         BasicRippleContainer,
         RippleContainerWithInputBindings,
@@ -31,8 +31,8 @@ describe('MdRipple', () => {
     });
   });
 
-  beforeEach(inject([ViewportRuler], (ruler: ViewportRuler) => {
-    viewportRuler = ruler;
+  beforeEach(inject([Platform], (p: Platform) => {
+    platform = p;
 
     // Set body margin to 0 during tests so it doesn't mess up position calculations.
     originalBodyMargin = document.body.style.margin;
@@ -44,7 +44,7 @@ describe('MdRipple', () => {
   });
 
   describe('basic ripple', () => {
-    let rippleDirective: MdRipple;
+    let rippleDirective: MatRipple;
 
     const TARGET_HEIGHT = 200;
     const TARGET_WIDTH = 300;
@@ -58,12 +58,10 @@ describe('MdRipple', () => {
     });
 
     it('sizes ripple to cover element', () => {
-      // In the iOS simulator (BrowserStack & SauceLabs), adding the content to the
-      // body causes karma's iframe for the test to stretch to fit that content once we attempt to
-      // scroll the page. Setting width / height / maxWidth / maxHeight on the iframe does not
-      // successfully constrain its size. As such, skip assertions in environments where the
-      // window size has changed since the start of the test.
-      if (window.innerWidth > startingWindowWidth || window.innerHeight > startingWindowHeight) {
+      // This test is consistently flaky on iOS (vs. Safari on desktop and all other browsers).
+      // Temporarily skip this test on iOS until we can determine the source of the flakiness.
+      // TODO(jelbourn): determine the source of flakiness here
+      if (platform.IOS) {
         return;
       }
 
@@ -105,6 +103,34 @@ describe('MdRipple', () => {
 
       expect(rippleTarget.querySelectorAll('.mat-ripple-element').length).toBe(2);
     });
+
+    it('should launch ripples on touchstart', fakeAsync(() => {
+      dispatchTouchEvent(rippleTarget, 'touchstart');
+      expect(rippleTarget.querySelectorAll('.mat-ripple-element').length).toBe(1);
+
+      tick(RIPPLE_FADE_IN_DURATION);
+      expect(rippleTarget.querySelectorAll('.mat-ripple-element').length).toBe(1);
+
+      dispatchTouchEvent(rippleTarget, 'touchend');
+
+      tick(RIPPLE_FADE_OUT_DURATION);
+
+      expect(rippleTarget.querySelectorAll('.mat-ripple-element').length).toBe(0);
+    }));
+
+    it('should ignore synthetic mouse events after touchstart', () => fakeAsync(() => {
+      dispatchTouchEvent(rippleTarget, 'touchstart');
+      dispatchTouchEvent(rippleTarget, 'mousedown');
+
+      tick(RIPPLE_FADE_IN_DURATION);
+      expect(rippleTarget.querySelectorAll('.mat-ripple-element').length).toBe(1);
+
+      dispatchTouchEvent(rippleTarget, 'touchend');
+
+      tick(RIPPLE_FADE_OUT_DURATION);
+
+      expect(rippleTarget.querySelectorAll('.mat-ripple-element').length).toBe(0);
+    }));
 
     it('removes ripple after timeout', fakeAsync(() => {
       dispatchMouseEvent(rippleTarget, 'mousedown');
@@ -223,9 +249,6 @@ describe('MdRipple', () => {
 
         // Mobile safari
         window.scrollTo(pageScrollLeft, pageScrollTop);
-        // Force an update of the cached viewport geometries because IE11 emits the
-        // scroll event later.
-        viewportRuler._cacheViewportGeometry();
       });
 
       afterEach(() => {
@@ -239,9 +262,6 @@ describe('MdRipple', () => {
 
         // Mobile safari
         window.scrollTo(0, 0);
-        // Force an update of the cached viewport geometries because IE11 emits the
-        // scroll event later.
-        viewportRuler._cacheViewportGeometry();
       });
 
       it('create ripple with correct position', () => {
@@ -284,7 +304,7 @@ describe('MdRipple', () => {
   });
 
   describe('manual ripples', () => {
-    let rippleDirective: MdRipple;
+    let rippleDirective: MatRipple;
 
     beforeEach(() => {
       fixture = TestBed.createComponent(BasicRippleContainer);
@@ -358,7 +378,7 @@ describe('MdRipple', () => {
   });
 
   describe('global ripple options', () => {
-    let rippleDirective: MdRipple;
+    let rippleDirective: MatRipple;
 
     function createTestComponent(rippleConfig: RippleGlobalOptions,
                                  testComponent: any = BasicRippleContainer) {
@@ -366,9 +386,9 @@ describe('MdRipple', () => {
       // The testing module has been initialized in the root describe group for the ripples.
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        imports: [MdRippleModule],
+        imports: [MatRippleModule],
         declarations: [testComponent],
-        providers: [{ provide: MD_RIPPLE_GLOBAL_OPTIONS, useValue: rippleConfig }]
+        providers: [{ provide: MAT_RIPPLE_GLOBAL_OPTIONS, useValue: rippleConfig }]
       });
 
       fixture = TestBed.createComponent(testComponent);
@@ -455,7 +475,7 @@ describe('MdRipple', () => {
 
   describe('configuring behavior', () => {
     let controller: RippleContainerWithInputBindings;
-    let rippleComponent: MdRipple;
+    let rippleComponent: MatRipple;
 
     beforeEach(() => {
       fixture = TestBed.createComponent(RippleContainerWithInputBindings);
@@ -569,25 +589,25 @@ describe('MdRipple', () => {
 
 @Component({
   template: `
-    <div id="container" #ripple="mdRipple" mat-ripple [mdRippleSpeedFactor]="0"
+    <div id="container" #ripple="matRipple" mat-ripple [matRippleSpeedFactor]="0"
          style="position: relative; width:300px; height:200px;">
     </div>
   `,
 })
 class BasicRippleContainer {
-  @ViewChild('ripple') ripple: MdRipple;
+  @ViewChild('ripple') ripple: MatRipple;
 }
 
 @Component({
   template: `
     <div id="container" style="position: relative; width:300px; height:200px;"
       mat-ripple
-      [mdRippleSpeedFactor]="0"
-      [mdRippleTrigger]="trigger"
-      [mdRippleCentered]="centered"
-      [mdRippleRadius]="radius"
-      [mdRippleDisabled]="disabled"
-      [mdRippleColor]="color">
+      [matRippleSpeedFactor]="0"
+      [matRippleTrigger]="trigger"
+      [matRippleCentered]="centered"
+      [matRippleRadius]="radius"
+      [matRippleDisabled]="disabled"
+      [matRippleColor]="color">
     </div>
     <div class="alternateTrigger"></div>
   `,
@@ -598,17 +618,17 @@ class RippleContainerWithInputBindings {
   disabled = false;
   radius = 0;
   color = '';
-  @ViewChild(MdRipple) ripple: MdRipple;
+  @ViewChild(MatRipple) ripple: MatRipple;
 }
 
 @Component({
-  template: `<div id="container" #ripple="mdRipple" mat-ripple></div>`,
+  template: `<div id="container" #ripple="matRipple" mat-ripple></div>`,
 })
 class RippleContainerWithoutBindings {}
 
-@Component({ template: `<div id="container" mat-ripple [mdRippleSpeedFactor]="0"
+@Component({ template: `<div id="container" mat-ripple [matRippleSpeedFactor]="0"
                              *ngIf="!isDestroyed"></div>` })
 class RippleContainerWithNgIf {
-  @ViewChild(MdRipple) ripple: MdRipple;
+  @ViewChild(MatRipple) ripple: MatRipple;
   isDestroyed = false;
 }

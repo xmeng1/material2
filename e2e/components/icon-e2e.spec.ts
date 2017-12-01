@@ -1,5 +1,4 @@
 import {browser, by, element} from 'protractor';
-import {screenshot} from '../screenshot';
 
 
 describe('icon', () => {
@@ -14,7 +13,7 @@ describe('icon', () => {
     it('should have the correct class when used', async () => {
       const attr = await testIcon.getAttribute('class');
 
-      expect(attr).toContain('md-24');
+      expect(attr).toContain('custom-class');
       expect(attr).toContain('material-icons');
     });
 

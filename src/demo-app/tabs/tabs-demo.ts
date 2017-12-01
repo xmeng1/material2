@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {Component, ViewEncapsulation} from '@angular/core';
 import {Observable} from 'rxjs/Observable';
 
@@ -7,6 +15,7 @@ import {Observable} from 'rxjs/Observable';
   templateUrl: 'tabs-demo.html',
   styleUrls: ['tabs-demo.css'],
   encapsulation: ViewEncapsulation.None,
+  preserveWhitespaces: false,
 })
 export class TabsDemo {
   // Nav bar demo
@@ -15,6 +24,8 @@ export class TabsDemo {
     {label: 'Rain', link: 'rainy-tab'},
     {label: 'Fog', link: 'foggy-tab'},
   ];
+
+  tabNavBackground: any = undefined;
 
   // Standard tabs demo
   tabs = [
@@ -92,6 +103,10 @@ export class TabsDemo {
 
   addToLabel() {
     this.tabLinks.forEach(link => link.label += 'extracontent');
+  }
+
+  toggleBackground() {
+    this.tabNavBackground = this.tabNavBackground ? undefined : 'primary';
   }
 }
 

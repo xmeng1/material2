@@ -1,19 +1,24 @@
 import {Component} from '@angular/core';
-import {AngularFireDatabase, FirebaseListObservable} from 'angularfire2/database';
-import {PayloadResult} from './data-definitions';
+import {AngularFireDatabase} from 'angularfire2/database';
+import {Observable} from 'rxjs/Observable';
+import {CoverageResult, PayloadResult} from './data-definitions';
 
 @Component({
   selector: 'dashboard-app',
   templateUrl: './dashboard-app.html',
-  styleUrls: ['./dashboard-app.css']
+  styleUrls: ['./dashboard-app.scss']
 })
 export class DashboardApp {
 
   /** Observable that emits all payload results from Firebase. */
-  payloads: FirebaseListObservable<PayloadResult[]>;
+  payloads: Observable<PayloadResult[]>;
+
+  /** Observable that emits all coverage reports from Firebase. */
+  coverage: Observable<CoverageResult[]>;
 
   constructor(database: AngularFireDatabase) {
-    this.payloads = database.list(`payloads`);
+    this.payloads = database.list<PayloadResult>('payloads').valueChanges();
+    this.coverage = database.list<CoverageResult>('coverage-reports').valueChanges();
   }
 }
 

@@ -8,10 +8,18 @@
     "module": "commonjs",
     "target": "es5",
     "types": ["jasmine"],
-    "experimentalDecorators": true,
-    "strictNullChecks": true
+    "paths": {
+      "@angular/material/*": ["./*"],
+      "@angular/cdk/*": ["../../dist/packages/cdk/*/public-api"]
+    }
+  },
+  "angularCompilerOptions": {
+    "strictMetadataEmit": true,
+    "skipTemplateCodegen": true,
+    "emitDecoratorMetadata": true
   },
   "include": [
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "index.ts"
   ]
 }

@@ -17,6 +17,7 @@ module.exports = (config) => {
     ],
     files: [
       {pattern: 'node_modules/core-js/client/core.js', included: true, watched: false},
+      {pattern: 'node_modules/tslib/tslib.js', included: true, watched: false},
       {pattern: 'node_modules/systemjs/dist/system.src.js', included: true, watched: false},
       {pattern: 'node_modules/zone.js/dist/zone.js', included: true, watched: false},
       {pattern: 'node_modules/zone.js/dist/proxy.js', included: true, watched: false},
@@ -26,6 +27,7 @@ module.exports = (config) => {
       {pattern: 'node_modules/zone.js/dist/fake-async-test.js', included: true, watched: false},
       {pattern: 'node_modules/hammerjs/hammer.min.js', included: true, watched: false},
       {pattern: 'node_modules/hammerjs/hammer.min.js.map', included: false, watched: false},
+      {pattern: 'node_modules/moment/min/moment-with-locales.min.js', included: true, watched: false},
 
       // Include all Angular dependencies
       {pattern: 'node_modules/@angular/**/*', included: false, watched: false},
@@ -61,12 +63,9 @@ module.exports = (config) => {
       startConnect: false,
       recordVideo: false,
       recordScreenshots: false,
-      options: {
-        'selenium-version': '2.48.2',
-        'command-timeout': 600,
-        'idle-timeout': 600,
-        'max-duration': 5400
-      }
+      idleTimeout: 600,
+      commandTimeout: 600,
+      maxDuration: 5400,
     },
 
     browserStack: {
@@ -74,28 +73,35 @@ module.exports = (config) => {
       startTunnel: false,
       retryLimit: 1,
       timeout: 600,
-      pollingTimeout: 20000
+      pollingTimeout: 20000,
+      video: false,
     },
 
     browserDisconnectTimeout: 20000,
     browserNoActivityTimeout: 240000,
     captureTimeout: 120000,
-    browsers: ['Chrome_1024x768'],
+    browsers: ['ChromeHeadlessLocal'],
 
     singleRun: false,
 
     browserConsoleLogOptions: {
       terminal: true,
       level: 'log'
-    }
+    },
 
+    client: {
+      jasmine: {
+        // TODO(jelbourn): re-enable random test order once we can de-flake existing issues.
+        random: false
+      }
+    }
   });
 
   if (process.env['TRAVIS']) {
     const buildId = `TRAVIS #${process.env.TRAVIS_BUILD_NUMBER} (${process.env.TRAVIS_BUILD_ID})`;
 
     if (process.env['TRAVIS_PULL_REQUEST'] === 'false' &&
-        process.env['MODE'] === "browserstack_required") {
+        process.env['MODE'] === "travis_required") {
 
       config.preprocessors['dist/packages/**/!(*+(.|-)spec).js'] = ['coverage'];
       config.reporters.push('coverage');

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -18,29 +18,39 @@ import {
   InjectionToken,
   Optional,
 } from '@angular/core';
+import {Platform} from '@angular/cdk/platform';
 import {RippleConfig, RippleRenderer} from './ripple-renderer';
 import {RippleRef} from './ripple-ref';
-import {ViewportRuler} from '../overlay/position/viewport-ruler';
-import {Platform} from '../platform/platform';
 
+/** Configurable options for `matRipple`. */
 export interface RippleGlobalOptions {
+  /**
+   * Whether ripples should be disabled. Ripples can be still launched manually by using
+   * the `launch()` method. Therefore focus indicators will still show up.
+   */
   disabled?: boolean;
+
+  /**
+   * If set, the default duration of the fade-in animation is divided by this value. For example,
+   * setting it to 0.5 will cause the ripple fade-in animation to take twice as long.
+   * A changed speedFactor will not affect the fade-out duration of the ripples.
+   */
   baseSpeedFactor?: number;
 }
 
 /** Injection token that can be used to specify the global ripple options. */
-export const MD_RIPPLE_GLOBAL_OPTIONS =
-    new InjectionToken<RippleGlobalOptions>('md-ripple-global-options');
+export const MAT_RIPPLE_GLOBAL_OPTIONS =
+    new InjectionToken<RippleGlobalOptions>('mat-ripple-global-options');
 
 @Directive({
-  selector: '[md-ripple], [mat-ripple], [mdRipple], [matRipple]',
-  exportAs: 'mdRipple',
+  selector: '[mat-ripple], [matRipple]',
+  exportAs: 'matRipple',
   host: {
     'class': 'mat-ripple',
     '[class.mat-ripple-unbounded]': 'unbounded'
   }
 })
-export class MdRipple implements OnChanges, OnDestroy {
+export class MatRipple implements OnChanges, OnDestroy {
 
   /**
    * The element that triggers the ripple when click events are received. Defaults to the
@@ -48,39 +58,39 @@ export class MdRipple implements OnChanges, OnDestroy {
    */
   // Prevent TS metadata emit from referencing HTMLElement in ripple.js
   // Otherwise running this code in a Node environment (e.g Universal) will not work.
-  @Input('mdRippleTrigger') trigger: HTMLElement|HTMLElement;
+  @Input('matRippleTrigger') trigger: HTMLElement|HTMLElement;
 
   /**
    * Whether the ripple always originates from the center of the host element's bounds, rather
    * than originating from the location of the click event.
    */
-  @Input('mdRippleCentered') centered: boolean;
+  @Input('matRippleCentered') centered: boolean;
 
   /**
-   * Whether click events will not trigger the ripple. It can still be triggered by manually
-   * calling createRipple()
+   * Whether click events will not trigger the ripple. Ripples can be still launched manually
+   * by using the `launch()` method.
    */
-  @Input('mdRippleDisabled') disabled: boolean;
+  @Input('matRippleDisabled') disabled: boolean;
 
   /**
    * If set, the radius in pixels of foreground ripples when fully expanded. If unset, the radius
    * will be the distance from the center of the ripple to the furthest corner of the host element's
    * bounding rectangle.
    */
-  @Input('mdRippleRadius') radius: number = 0;
+  @Input('matRippleRadius') radius: number = 0;
 
   /**
    * If set, the normal duration of ripple animations is divided by this value. For example,
    * setting it to 0.5 will cause the animations to take twice as long.
    * A changed speedFactor will not modify the fade-out duration of the ripples.
    */
-  @Input('mdRippleSpeedFactor') speedFactor: number = 1;
+  @Input('matRippleSpeedFactor') speedFactor: number = 1;
 
   /** Custom color for ripples. */
-  @Input('mdRippleColor') color: string;
+  @Input('matRippleColor') color: string;
 
   /** Whether foreground ripples should be visible outside the component's bounds. */
-  @Input('mdRippleUnbounded') unbounded: boolean;
+  @Input('matRippleUnbounded') unbounded: boolean;
 
   /** Renderer for the ripple DOM manipulations. */
   private _rippleRenderer: RippleRenderer;
@@ -91,11 +101,10 @@ export class MdRipple implements OnChanges, OnDestroy {
   constructor(
     elementRef: ElementRef,
     ngZone: NgZone,
-    ruler: ViewportRuler,
     platform: Platform,
-    @Optional() @Inject(MD_RIPPLE_GLOBAL_OPTIONS) globalOptions: RippleGlobalOptions
+    @Optional() @Inject(MAT_RIPPLE_GLOBAL_OPTIONS) globalOptions: RippleGlobalOptions
   ) {
-    this._rippleRenderer = new RippleRenderer(elementRef, ngZone, ruler, platform);
+    this._rippleRenderer = new RippleRenderer(elementRef, ngZone, platform);
     this._globalOptions = globalOptions ? globalOptions : {};
 
     this._updateRippleRenderer();
@@ -115,8 +124,8 @@ export class MdRipple implements OnChanges, OnDestroy {
   }
 
   /** Launches a manual ripple at the specified position. */
-  launch(pageX: number, pageY: number, config = this.rippleConfig): RippleRef {
-    return this._rippleRenderer.fadeInRipple(pageX, pageY, config);
+  launch(x: number, y: number, config: RippleConfig = this.rippleConfig): RippleRef {
+    return this._rippleRenderer.fadeInRipple(x, y, config);
   }
 
   /** Fades out all currently showing ripple elements. */
@@ -135,7 +144,7 @@ export class MdRipple implements OnChanges, OnDestroy {
   }
 
   /** Updates the ripple renderer with the latest ripple configuration. */
-  private _updateRippleRenderer() {
+  _updateRippleRenderer() {
     this._rippleRenderer.rippleDisabled = this._globalOptions.disabled || this.disabled;
     this._rippleRenderer.rippleConfig = this.rippleConfig;
   }
